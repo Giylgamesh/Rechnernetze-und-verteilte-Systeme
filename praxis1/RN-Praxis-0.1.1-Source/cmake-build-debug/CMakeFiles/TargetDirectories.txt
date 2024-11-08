@@ -1,0 +1,5 @@
+/Users/neleporto/Studium/RN-Praxis-0.1.1-Source/cmake-build-debug/CMakeFiles/webserver.dir
+/Users/neleporto/Studium/RN-Praxis-0.1.1-Source/cmake-build-debug/CMakeFiles/package.dir
+/Users/neleporto/Studium/RN-Praxis-0.1.1-Source/cmake-build-debug/CMakeFiles/package_source.dir
+/Users/neleporto/Studium/RN-Praxis-0.1.1-Source/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/neleporto/Studium/RN-Praxis-0.1.1-Source/cmake-build-debug/CMakeFiles/rebuild_cache.dir
