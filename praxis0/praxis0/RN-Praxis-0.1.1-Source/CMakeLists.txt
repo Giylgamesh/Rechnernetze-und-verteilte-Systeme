@@ -1,0 +1,12 @@
+project(RN-Praxis)
+cmake_minimum_required(VERSION 3.5)
+set(CMAKE_C_STANDARD 11)
+
+# Diese Zeile ist die Anweisung, dass wir eine ausführbare Datei erstellen wollen
+add_executable(hello_world hello_world.c)
+
+# Diese Zeilen sind für das Erstellen der Abgabedatei relevant
+set(CPACK_SOURCE_GENERATOR "TGZ")
+set(CPACK_SOURCE_IGNORE_FILES ${CMAKE_BINARY_DIR} /\\..*$)
+set(CPACK_VERBATIM_VARIABLES YES) # Variablen sollen nicht optimiert werden
+include(CPack)

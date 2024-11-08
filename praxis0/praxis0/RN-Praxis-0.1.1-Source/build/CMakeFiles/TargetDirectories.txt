@@ -1,0 +1,5 @@
+/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis0/praxis0/RN-Praxis-0.1.1-Source/build/CMakeFiles/hello_world.dir
+/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis0/praxis0/RN-Praxis-0.1.1-Source/build/CMakeFiles/package.dir
+/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis0/praxis0/RN-Praxis-0.1.1-Source/build/CMakeFiles/package_source.dir
+/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis0/praxis0/RN-Praxis-0.1.1-Source/build/CMakeFiles/edit_cache.dir
+/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis0/praxis0/RN-Praxis-0.1.1-Source/build/CMakeFiles/rebuild_cache.dir
