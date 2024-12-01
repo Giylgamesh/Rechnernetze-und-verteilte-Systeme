@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 
     buf[numbytes] = '\0';
     printf("Client: '%s'\n",buf);
-     */
+    */
 
     // Antwort bei Erfolgreicher Verbindung zum Socket
     char *msg = "Thank you for connection to this Socket!";
