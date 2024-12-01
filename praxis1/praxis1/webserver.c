@@ -19,6 +19,8 @@ int main(int argc, char *argv[])
     int sockfd, new_fd;
     socklen_t addr_size;
     struct addrinfo hints, *servinfo;
+    int rv;
+    char s[INET6_ADDRSTRLEN];
 
     const char *host = argv[1];
     const char *port = argv[2];
@@ -39,12 +41,18 @@ int main(int argc, char *argv[])
 
     // Socket initialisieren
     sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
-    printf("\nSocket() File Descriptor value: %d\n\n", sockfd);
+    printf("\nSocket() File Descriptor value: %d\n", sockfd);
 
 
     // Socket-Discriptor an die Adresse Binden
     if ((status = bind(sockfd, servinfo->ai_addr, servinfo->ai_addrlen)) == -1) {
         fprintf(stderr, "bind error: %s\n", gai_strerror(status));
+    }
+
+    int yes=1;
+    if (setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof yes) == -1) {
+        perror("setsockopt failed...");
+        exit(1);
     }
 
 
@@ -60,22 +68,24 @@ int main(int argc, char *argv[])
         perror("Couldn't accept any Connection!");
     }
 
-    /*int numbytes;
-    if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-        perror("recv");
+
+    int numbytes;
+    if ((numbytes = recv(new_fd, buf, MAXDATASIZE-1, 0)) == -1) {
+        perror("recv failed...");
         exit(1);
     }
 
     buf[numbytes] = '\0';
     printf("Client: '%s'\n",buf);
-    */
+
 
     // Antwort bei Erfolgreicher Verbindung zum Socket
-    char *msg = "Thank you for connection to this Socket!";
+    char *msg = "Reply";
     int len, bytes_sent;
     len = strlen(msg);
     bytes_sent = send(new_fd, msg, len, 0);
 
+    printf("Bytes send: %d", bytes_sent);
     close(sockfd);
     close(new_fd);
 
