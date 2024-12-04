@@ -1,7 +1,6 @@
 #include <sys/types.h> // datentypen definieren (u.a. size_t)
 #include <sys/socket.h> // sockets erstellen und verwalten
 #include <netdb.h> // für das struct addrinfo (ip-adressen und ports)
-
 #include <stdio.h> // standard ein- und ausgabe
 #include <stdlib.h> // speicherverwaltung (u.a. malloc)
 #include <string.h> // strings bearbeiten
@@ -11,14 +10,8 @@
 
 // max anfragegrösse ist 8kB + 40 header mit 256 bytes size = 18kB
 #define MAX_REQUEST_SIZE 1024*18
-
-// TODO 1: dynamischer speicher
-//struct erstellen
-// ressourcen indexarray
-// counter index für die anzahl der einträge im array
-// globale variablen
-
-
+// maximal 100 ressourcen im array
+#define MAX_RESOURCES 100
 
 static char *const END_SEQUENCE = "\r\n\r\n";
 regex_t rex_request;
@@ -32,6 +25,16 @@ struct http_request {
     int size;
     char *body;
 };
+
+// Resource structure for dynamic content
+struct resource {
+    char *uri;                  // Resource path
+    char *content;              // Resource content
+    struct resource *next;      // Pointer to the next resource
+};
+
+// Head of the linked list
+struct resource *resource_list = NULL;
 
 // parse the current buffer into a http request
 struct http_request parse_request(char *buffer) {
@@ -86,11 +89,9 @@ static struct sockaddr_in derive_sockaddr(const char *host, const char *port) {
     return result;
 }
 
-// -------------------------------------------------------------------------
-
-void init_regex() {// precompile regex for request line parsing
-    int res = regcomp(&rex_request, "^(GET|DELETE|PUT|POST|HEAD|PATCH) (/[^ ]*) (HTTP/(1\\.0|1\\.1|2|3))",
-                      REG_EXTENDED);
+// precompile regex for request line parsing
+void init_regex() {
+    int res = regcomp(&rex_request, "^(GET|DELETE|PUT|POST|HEAD|PATCH) (/[^ ]*) (HTTP/(1\\.0|1\\.1|2|3))",REG_EXTENDED);
     if (res) {
         fprintf(stderr, "error compiling regex\n");
         exit(3);
@@ -111,36 +112,30 @@ void signal_handler(int signal_number) {
     }
 }
 
-
-// TODO 2: Hilfsfunktion PUT Logik
-
-    // Suche nach einer bestehenden Ressource
-    // Ressource gefunden -> Inhalt überschreiben, return
-    // Ressource nicht gefunden -> Neue Ressource (Adresse, Inhalt) erstellen
-    // Fehler
-
-
-// TODO 3: Hilfsfunktion delete Logik
-
-    // Suche Ressource
-    // Ressource gefunden -> Adresse und Inhalt freigeben
-    // Ressourcen im Indexarray nach vorne ziehen, anzahl verringern
-    // Fehler
-
+// free ressources
+// Free all resources
+void cleanup_resources() {
+    struct resource *current = resource_list;
+    while (current) {
+        struct resource *next = current->next;
+        free(current->uri);
+        free(current->content);
+        free(current);
+        current = next;
+    }
+    resource_list = NULL;
+}
 
 void handle_http_request(int client_socket, struct http_request *req) {
-    // valid request line
+
+    char *response = "HTTP/Standard Response\r\n\r\n"; // Default response for safety
     if (req->complete) {
         printf("handle %s %s\n", req->method, req->uri);
 
-        // 400: inkorrekte Anfragen
-        // 404: GET-Anfragen
-        // 501: alle anderen Anfragen
-        char *response;
-        // TODO ? Testen ob GET statisch ist
-        if (strcmp("GET", req->method) == 0) {
+        char *response = NULL; // "HTTP/1.1 500 Internal Server Error\r\n\r\n"; // Default response for safety
 
-            // fake file resources static/foo, static/bar, static/baz
+        // HANDLE GET REQUEST
+        if (strcmp("GET", req->method) == 0) {
             if (strcmp(req->uri, "/static/foo") == 0) {
                 response = "HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nFoo\r\n";
             } else if (strcmp(req->uri, "/static/bar") == 0) {
@@ -150,29 +145,102 @@ void handle_http_request(int client_socket, struct http_request *req) {
             } else {
                 response = "HTTP/1.1 404 Not Found\r\n\r\n";
             }
-            // TODO: PUT und DELETE
-            // prüfen ob richtige Methode angefragt wird
-            // prüfen ob Pfad dynamisch ist, ansonsten 403 Fehler response
-            // für GET oder DELETE Hilfsfunktion aufrufen
-            // response auf den richtigen Rückgabewert setzen
+        }
+            // HANDLE PUT REQUEST
+        else if (strcmp("PUT", req->method) == 0) {
+            if (strncmp(req->uri, "/dynamic/", 9) == 0) {
+                // start of list
+                struct resource *current = resource_list;
+                struct resource *prev = NULL;
+                int updated = 0;
+                // look for ressource
+                while (current) {
+                    if (strcmp(current->uri, req->uri) == 0) {
+                        free(current->content);
+                        current->content = strdup(req->body);
+                        response = "HTTP/1.1 204 No Content\r\n\r\n";
+                        updated = 1;
+                        break;
+                    }
+                    prev = current;
+                    current = current->next;
+                }
 
-        } else {
+                // Add a new resource if not found
+                if (!updated) {
+                    struct resource *new_resource = malloc(sizeof(struct resource));
+                    if (!new_resource) {
+                        perror("Memory allocation failed");
+                        response = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+                        return;
+                    }
+                    new_resource->uri = strdup(req->uri);
+                    new_resource->content = strdup(req->body);
+                    new_resource->next = NULL;
+
+                    if (prev) {
+                        prev->next = new_resource;
+                    } else {
+                        resource_list = new_resource; // First resource
+                    }
+
+                    response = "HTTP/1.1 201 Created\r\n\r\n";
+                }
+            } else {
+                response = "HTTP/1.1 403 Forbidden\r\n\r\n";
+            }
+        }
+
+            // HANDLE DELETE REQUEST
+        else if (strcmp("DELETE", req->method) == 0) {
+            if (strncmp(req->uri, "/dynamic/", 9) == 0) {
+                // start of list
+                struct resource *current = resource_list;
+                struct resource *prev = NULL;
+                int found = 0;
+                // look for ressource
+                // delete logic
+                while (current) {
+                    if (strcmp(current->uri, req->uri) == 0) {
+                        if (prev) {
+                            prev->next = current->next;
+                        } else {
+                            resource_list = current->next; // Update head if first node
+                        }
+
+                        free(current->uri);
+                        free(current->content);
+                        free(current);
+
+                        response = "HTTP/1.1 204 No content\r\n\r\n";
+                        found = 1;
+                        break;
+                    }
+                    prev = current;
+                    current = current->next;
+                }
+                if (!found) {
+                    response = "HTTP/1.1 404 Not Found\r\n\r\n";
+                }
+            } else {
+                response = "HTTP/1.1 403 Forbidden\r\n\r\n";
+            }
+        }
+            // HANDLE UNSUPPORTED METHODS
+        else {
             response = "HTTP/1.1 501 Not Implemented\r\n\r\n";
         }
 
-        // send the response to the client
+        // Send the response to the client
         ssize_t bytes_sent = write(client_socket, response, strlen(response));
-
-        // prüfen ob die antwort versendet wurde
         if (bytes_sent == -1) {
             perror("Error sending response");
         } else {
-            // info ausgeben welche antwort versendet wurde
             printf("Response sent:\n%s\n", response);
+            //close(client_socket); // TODO: CLOSE CLIENT SOCKET
         }
     } else {
-        // send bad request
-        printf("Send bad request for incomplete request");
+        // Handle incomplete requests
         const char *response = "HTTP/1.1 400 Bad Request\r\n\r\n";
         ssize_t bytes_sent = write(client_socket, response, strlen(response));
         if (bytes_sent == -1) {
@@ -329,7 +397,8 @@ int main(int argc, char *argv[]) {
     regfree(&rex_request);
 
     // server socket schließen
-    return(close(server_socket));
+    return (close(server_socket));
 
     // return exit test
-    //return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
+}
