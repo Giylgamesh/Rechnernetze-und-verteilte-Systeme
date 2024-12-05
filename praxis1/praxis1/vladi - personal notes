@@ -1,0 +1,15 @@
+bjees guides notes:
+** 2 Types of sockets:
+    - Stream Sockets (SOCK_STREAM)
+        - Use TCP (Transmission Control Protocol)
+            - error free (If a packet is lost or corrupted, it will be retransmitted)
+            - ordered
+        - need to maintain open connection
+    - Datagram Sockets (DOCK_DGRAM)
+         - Use UDP (User Datagram Protocol)
+            - error free
+            - out of order
+        - don't need to maintain open connection (connectionless)
+        - may need additional protocol:
+            - e.g. if recipient doesn't get anything after 5 seconds, ask the sender to send again.
+        - is very fast and doesn't need many resources
