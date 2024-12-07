@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
@@ -36,13 +35,12 @@ int main(int argc, char *argv[])
     int sock_fd, client_fd;
     socklen_t addr_size;
     struct addrinfo hints, *servinfo;
-    int rv;
     char s[INET6_ADDRSTRLEN];
 
     const char *host = argv[1];
     const char *port = argv[2];
 
-    printf("----------------------------------- Starting Webserver -----------------------------------\n\n");
+    printf("\n\n----------------------------------- Starting Webserver -----------------------------------\n\n");
     printf("Host: %s Port: %s\n\n", host, port);
 
     memset(&hints, 0, sizeof hints); // struct sollte leer sein
