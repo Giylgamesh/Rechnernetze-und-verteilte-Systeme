@@ -173,11 +173,17 @@ int main(int argc, char *argv[])
             /*
              * move_index errechnet sich aus dem buf_index also der länge des Buffers minus
              * der verbleibenden Länge des Buffers nachdem ein Paket erkannt wurde, also
-             * nach \r\n\r\n.
+             * nach \r\n\r\n. (Wichtig, dass sind insgesamt nur 4 Bytes <-- "\r\n\r\n").
+             *
+             * Da recv_buf an den Anfang des Buffer zeigt und somit in der Adresse "kleiner" ist und
+             * recv_end an das Ende des Buffers zeigt und somit eine "größere" Adresse hat,
+             * subtrahieren wir einfach beide Zeiger (+4 Bytes wegen dem Paketende).
+             * Diese Differenz ist die Anzahl an Bytes (bzw. einzelnen Adresschritten/Indizes durch das Array),
+             * zwischen recv_end + 4 Bytes weiter und recv_buf
              */
             int move_index = buf_index - (recv_end + 4 - recv_buf);
             memmove(recv_buf, recv_buf + (recv_end + 4 - recv_buf), move_index);
-            buf_index = 0;
+            buf_index = move_index;
             printf("Sending Message with %d Bytes\n\n", bytes_sent);
         }
     }
