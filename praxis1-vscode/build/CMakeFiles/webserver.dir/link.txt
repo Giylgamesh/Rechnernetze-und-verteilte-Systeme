@@ -1,1 +1,1 @@
-/usr/bin/c89-gcc -g CMakeFiles/webserver.dir/webserver.c.o -o webserver 
+/usr/bin/gcc -g CMakeFiles/webserver.dir/webserver.c.o -o webserver 

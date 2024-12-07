@@ -38,9 +38,9 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "webserver::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-webserver-Debug-c196d9f70ab853ac9983.json",
-					"name" : "webserver",
+					"id" : "beejes_webserver::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-beejes_webserver-Debug-4057aad7e76e85baf92d.json",
+					"name" : "beejes_webserver",
 					"projectIndex" : 0
 				}
 			]

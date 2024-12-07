@@ -1,7 +1,7 @@
 [
 {
   "directory": "/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/build",
-  "command": "/usr/bin/c89-gcc   -g -std=gnu11 -o CMakeFiles/webserver.dir/webserver.c.o -c /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/webserver.c",
-  "file": "/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/webserver.c"
+  "command": "/usr/bin/gcc   -g -std=gnu11 -o CMakeFiles/beejes_webserver.dir/beejes_webserver.c.o -c /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/beejes_webserver.c",
+  "file": "/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/beejes_webserver.c"
 }
 ]

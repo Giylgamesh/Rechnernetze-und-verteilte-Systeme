@@ -73,15 +73,15 @@ CMakeFiles/webserver.dir/webserver.c.o: CMakeFiles/webserver.dir/flags.make
 CMakeFiles/webserver.dir/webserver.c.o: ../webserver.c
 CMakeFiles/webserver.dir/webserver.c.o: CMakeFiles/webserver.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/webserver.dir/webserver.c.o"
-	/usr/bin/c89-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/webserver.dir/webserver.c.o -MF CMakeFiles/webserver.dir/webserver.c.o.d -o CMakeFiles/webserver.dir/webserver.c.o -c /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/webserver.c
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/webserver.dir/webserver.c.o -MF CMakeFiles/webserver.dir/webserver.c.o.d -o CMakeFiles/webserver.dir/webserver.c.o -c /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/webserver.c
 
 CMakeFiles/webserver.dir/webserver.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/webserver.dir/webserver.c.i"
-	/usr/bin/c89-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/webserver.c > CMakeFiles/webserver.dir/webserver.c.i
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/webserver.c > CMakeFiles/webserver.dir/webserver.c.i
 
 CMakeFiles/webserver.dir/webserver.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/webserver.dir/webserver.c.s"
-	/usr/bin/c89-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/webserver.c -o CMakeFiles/webserver.dir/webserver.c.s
+	/usr/bin/gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/webserver.c -o CMakeFiles/webserver.dir/webserver.c.s
 
 # Object files for target webserver
 webserver_OBJECTS = \

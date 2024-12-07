@@ -137,41 +137,41 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named webserver
+# Target rules for targets named beejes_webserver
 
 # Build rule for target.
-webserver: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 webserver
-.PHONY : webserver
+beejes_webserver: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 beejes_webserver
+.PHONY : beejes_webserver
 
 # fast build rule for target.
-webserver/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserver.dir/build.make CMakeFiles/webserver.dir/build
-.PHONY : webserver/fast
+beejes_webserver/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/beejes_webserver.dir/build.make CMakeFiles/beejes_webserver.dir/build
+.PHONY : beejes_webserver/fast
 
-webserver.o: webserver.c.o
-.PHONY : webserver.o
+beejes_webserver.o: beejes_webserver.c.o
+.PHONY : beejes_webserver.o
 
 # target to build an object file
-webserver.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserver.dir/build.make CMakeFiles/webserver.dir/webserver.c.o
-.PHONY : webserver.c.o
+beejes_webserver.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/beejes_webserver.dir/build.make CMakeFiles/beejes_webserver.dir/beejes_webserver.c.o
+.PHONY : beejes_webserver.c.o
 
-webserver.i: webserver.c.i
-.PHONY : webserver.i
+beejes_webserver.i: beejes_webserver.c.i
+.PHONY : beejes_webserver.i
 
 # target to preprocess a source file
-webserver.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserver.dir/build.make CMakeFiles/webserver.dir/webserver.c.i
-.PHONY : webserver.c.i
+beejes_webserver.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/beejes_webserver.dir/build.make CMakeFiles/beejes_webserver.dir/beejes_webserver.c.i
+.PHONY : beejes_webserver.c.i
 
-webserver.s: webserver.c.s
-.PHONY : webserver.s
+beejes_webserver.s: beejes_webserver.c.s
+.PHONY : beejes_webserver.s
 
 # target to generate assembly for a file
-webserver.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserver.dir/build.make CMakeFiles/webserver.dir/webserver.c.s
-.PHONY : webserver.c.s
+beejes_webserver.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/beejes_webserver.dir/build.make CMakeFiles/beejes_webserver.dir/beejes_webserver.c.s
+.PHONY : beejes_webserver.c.s
 
 # Help Target
 help:
@@ -183,10 +183,10 @@ help:
 	@echo "... package"
 	@echo "... package_source"
 	@echo "... rebuild_cache"
-	@echo "... webserver"
-	@echo "... webserver.o"
-	@echo "... webserver.i"
-	@echo "... webserver.s"
+	@echo "... beejes_webserver"
+	@echo "... beejes_webserver.o"
+	@echo "... beejes_webserver.i"
+	@echo "... beejes_webserver.s"
 .PHONY : help
 
 

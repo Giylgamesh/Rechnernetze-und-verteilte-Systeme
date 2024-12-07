@@ -3,28 +3,66 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 
-#define PORT 8080
+
+// we define size of buffer to 1024 bytes 
+// this will be used to store the incoming data
 #define BUFFER_SIZE 1024
+// we define the port number to 8080
+// this will be used to listen for incoming connections on this port
+// not sure if we need it for the task
+#define PORT 8080
 
 int main() {
-    int server_fd;     // initiate file descriptor for the server socket.
-    int new_socket; // initiate file descriptor for the accepted client connection.
-    struct sockaddr_in address; // initiate struct for the server address .
-    int opt = 1; // variable for the setsockopt function to set the socket option
+    // struct, streight from Beej's Guide to Network Programming
+    // addrinfo struct is used to store information about the server address
+    struct addrinfo {
+    int              ai_flags;     // AI_PASSIVE, AI_CANONNAME, etc.
+    int              ai_family;    // AF_INET, AF_INET6, AF_UNSPEC
+    int              ai_socktype;  // SOCK_STREAM, SOCK_DGRAM
+    int              ai_protocol;  // use 0 for "any"
+    size_t           ai_addrlen;   // size of ai_addr in bytes
+    struct sockaddr *ai_addr;      // struct sockaddr_in or _in6
+    char            *ai_canonname; // full canonical hostname
+
+    struct addrinfo *ai_next;      // linked list, next node
+};
+
+struct sockaddr {
+    unsigned short    sa_family;    // address family, AF_xxx
+    char              sa_data[14];  // 14 bytes of protocol address. (port number and IP address)
+}; 
+
+    // struct addrinfo address; // initiate struct for the server address .
+    struct sockaddr_in address; // initiate struct for the server address . 
+    //This struct will contain the address of the server and the port number
     int addrlen = sizeof(address); //define size of address
-    char buffer[BUFFER_SIZE] = {0}; // buffer to store the incoming data
+
+    int new_socket; // initiate variable for the accepted client connection
+    int server_fd;     // initiate file descriptor (fd)  for the server socket.
     
+    int opt = 1; // variable for the setsockopt function to set the socket option
+
+    char buffer[BUFFER_SIZE] = {0}; // buffer to store the incoming data of data type char
+    
+    // define reply message as 
+    char *reply = "Reply"; 
+
+
     // if the socket function fails, print an error message and exit the program with a failure status
     // AF_INET is the address family for IPv4
+    // AF_INET6 for IPv6
+    // AF_UNSPEC for unspecified.... either IPv4 or IPv6
     // SOCK_STREAM is the type of socket for TCP
     // 0 is the protocol value for IP and 1 is the protocol value for ICMP
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("socket failed"); // print error message
-        exit(EXIT_FAILURE); 
+        perror("socket failed"); // perror() prints error message to stderr instead of stdout (standard output) like printf()
+        exit(EXIT_FAILURE); // close program and server
     }
     
     // Forcefully attaching socket to the port 8080
+    // setting socket options to SO_REUSEADDR like described in task, to avoid the "Address already in use" error
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
         perror("setsockopt"); // print error message if setsockopt fails
         close(server_fd); // command to close server socket
@@ -58,8 +96,14 @@ int main() {
         exit(EXIT_FAILURE);
     }
     
-    // Read data from the socket
+    // val
     int valread = read(new_socket, buffer, BUFFER_SIZE);
+    if  (valread < 0) {
+        perror("read");
+        close(new_socket);
+        close(server_fd);
+        exit(EXIT_FAILURE);
+    }
     printf("Received: %s\n", buffer);
     
     // Close the socket

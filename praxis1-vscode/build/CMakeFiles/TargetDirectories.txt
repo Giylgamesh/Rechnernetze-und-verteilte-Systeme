@@ -1,4 +1,4 @@
-/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/build/CMakeFiles/webserver.dir
+/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/build/CMakeFiles/beejes_webserver.dir
 /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/build/CMakeFiles/package.dir
 /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/build/CMakeFiles/package_source.dir
 /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis1-vscode/build/CMakeFiles/edit_cache.dir

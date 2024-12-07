@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5) # Minimale CMake-Version 3.5
 set(CMAKE_C_STANDARD 11) # Wir verwenden C-Version C11
 
 # Diese Zeile ist die Anweisung, dass wir eine ausführbare Datei erstellen wollen
-add_executable(webserver webserver.c)
+add_executable(beejes_webserver beejes_webserver.c)
 
 # Wenn Sie mehrere Code-Dateien haben, werden diese Leerzeichen getrennt angehängt:
 # add_executable(executable first.c second.c third.c)
