@@ -77,8 +77,21 @@ CMakeFiles/beejes_webserver.dir/beejes_webserver.c.o: ../beejes_webserver.c \
   /usr/include/x86_64-linux-gnu/bits/in.h \
   /usr/include/rpc/netdb.h \
   /usr/include/x86_64-linux-gnu/bits/netdb.h \
-  /usr/include/arpa/inet.h
+  /usr/include/arpa/inet.h \
+  /usr/include/stdlib.h \
+  /usr/include/x86_64-linux-gnu/bits/waitflags.h \
+  /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
+  /usr/include/alloca.h \
+  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h
 
+
+/usr/include/alloca.h:
+
+/usr/include/x86_64-linux-gnu/bits/waitstatus.h:
+
+/usr/include/x86_64-linux-gnu/bits/waitflags.h:
+
+/usr/include/stdlib.h:
 
 /usr/include/x86_64-linux-gnu/bits/netdb.h:
 
@@ -155,6 +168,8 @@ CMakeFiles/beejes_webserver.dir/beejes_webserver.c.o: ../beejes_webserver.c \
 /usr/include/x86_64-linux-gnu/bits/types/__FILE.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/clock_t.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdlib-float.h:
 
 /usr/include/x86_64-linux-gnu/sys/socket.h:
 

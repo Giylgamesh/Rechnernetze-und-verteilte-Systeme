@@ -1,5 +1,21 @@
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdlib.h>
 
-extern static struct sockaddr_in derive_sockaddr(const char* host, const char* port){
+/* 
+Deruves a sockaddr_in strucure from the provided host and port information
+
+@param host: the host (IP address or hostname) to be resolved ino a network address
+@param port: the port number to be converted into network byte order
+
+@return: a sockaddr_in structure representing the network address derived from the host and port
+*/
+static struct sockaddr_in derive_sockaddr(const char* host, const char* port){
     struct addrinfo hints = {
         .ai_family = AF_INET,
     };
@@ -19,4 +35,3 @@ extern static struct sockaddr_in derive_sockaddr(const char* host, const char* p
     freeaddrinfo(result_info);
     return result;
 }
-

@@ -56,8 +56,8 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 
-// debug flag
-int debug = 1;
+#define MYPORT "3490"    // the port users will be connecting to
+#define BACKLOG 10     // how many pending connections queue will hold
 
 /* 
 Deruves a sockaddr_in strucure from the provided host and port information
@@ -89,9 +89,12 @@ static struct sockaddr_in derive_sockaddr(const char* host, const char* port){
 }
 
 
+// debug flag
+int debug = 1;
+
 int main(int argc, char *argv[])
 {
-    // ---DEBUG--- 
+        // ---DEBUG--- 
     //print out the command line arguments (number of arguments and the arguments themselves)
     if (debug == 1)
     {
@@ -103,57 +106,111 @@ int main(int argc, char *argv[])
         }
         printf("----------DEBUG END-------------main() called\n");
     } //---DEBUG END---
-    
-    struct addrinfo hints, *res, *p;
-    int status;
-    char ipstr[INET6_ADDRSTRLEN];   // array with char elements of size INET6_ADDRSTRLEN 
-                                    //(INET6_ADDRSTRLEN is the maximum length of the IPv6 address string)
 
-    
-    // check for command line arguments 
-    // fprintf() sends output to specific stream, 
-    // in this case stderr (standard error, its separate from stdout (standard output) which is the output of the program)
-    if (argc != 2) {
-        fprintf(stderr,"usage: showip hostname\n");
-        return 1;
-    }
+
+    int sockfd; // socket file descriptor
+    int new_fd;
+
+    struct addrinfo hints, *res, *P;
+    int status; 
+
+
+    // // check for command line arguments 
+    // // fprintf() sends output to specific stream, 
+    // // in this case stderr (standard error, its separate from stdout (standard output) which is the output of the program)
+    // if (argc != 2) {
+    //     fprintf(stderr,"usage: showip hostname\n");
+    //     return 1;
+    // }
 
 
     memset(&hints, 0, sizeof hints); // zeroing out the memory so that the struct is empty
     hints.ai_family = AF_UNSPEC; // AF_UNSPEC can be either AF_INET or AF_INET6 (IPv4 or IPv6)
     hints.ai_socktype = SOCK_STREAM; // SOCK_STREAM is TCP , SOCK_DGRAM is UDP
+    hints.ai_flags = AI_PASSIVE; // assign the address of my local host to the socket structures
 
-    // getaddrinfo() returns a linked list of addrinfo structures
-    status = getaddrinfo(argv[1], NULL, &hints, &res);
-    if (status  != 0) {
+    status = getaddrinfo(NULL, MYPORT, &hints, &res);
+
+    if (status != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
         return 2;
     }
+    // again, you should do error-checking on getaddrinfo(), and walk
+    // the "res" linked list looking for valid entries instead of just
+    // assuming the first one is good (like many of these examples do).
+    // See the section on client/server for real examples.
 
-    printf("IP addresses for %s:\n\n", argv[1]);
-
-    for(p = res;p != NULL; p = p->ai_next) {
-        void *addr;
-        char *ipver;
-
-        // get the pointer to the address itself,
-        // different fields in IPv4 and IPv6:
-        if (p->ai_family == AF_INET) { // IPv4
-            struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
-            addr = &(ipv4->sin_addr);
-            ipver = "IPv4";
-        } else { // IPv6
-            struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)p->ai_addr;
-            addr = &(ipv6->sin6_addr);
-            ipver = "IPv6";
-        }
-
-        // convert the IP to a string and print it:
-        inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
-        printf("  %s: %s\n", ipver, ipstr);
+    // create a socket
+    sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if (sockfd <  0) {
+        perror("ERROR while creating a socket"); // fprintf(stderr, "socket: %s\n", strerror(errno));
+        return 2; // specific error
     }
 
+
+    // bind it to the port we passed in to getaddrinfo():
+    // bind() returns 0 of successfull, -1 for errors
+    if (bind(sockfd, res->ai_addr, res->ai_addrlen) < 0) {
+        perror("ERROR while binding a socket"); // fprintf(stderr, "bind: %s\n", strerror(errno));
+        return 2; // specific error
+    }
+
+    // listen for incoming connections on the socket sockfd
+    int backlog = 3;  // maximum number of connections waiting in queue
+    listen(sockfd, backlog);
+   
+    // accept a connection attempt to a speciic socket
+    /*addr will usually be a pointer to a local struct sockaddr_storage. 
+    This is where the information about the incoming connection will go 
+    (and with it you can determine which host is calling you from which port)*/
+    struct sockaddr_storage their_addr;
+    socklen_t addr_size;
+    addr_size = sizeof(their_addr);
+    new_fd = accept(sockfd, (struct sockaddr *) &their_addr, &addr_size); // only relevant for TCP protocol, becouse we build a continues data stream
+    if (new_fd < 0) {
+        perror("ERROR while accepting a connection");
+        return 2; // specific error
+    }
+    
+    
+    // receive data from the socket
+    char buffer[1024]; // buffer to store the incoming data
+    int number_of_bytes_received = recv(new_fd, buffer, sizeof(buffer), 0); // recv() returns the number of bytes received, or -1 if an error occurred or 0 if the connection is closed
+    if (number_of_bytes_received < 0) {
+        perror("ERROR while receiving data");
+        return 2; // specific error
+    } if (number_of_bytes_received == 0) {
+        printf("connection closed on other end!\n");
+    } else {
+        buffer[number_of_bytes_received] = '\0';
+        printf("Received: %s\n", buffer);
+    }
+    
+    // reply to client
+    char *reply_msg = "Reply"; // reply message
+    int length, bytes_sent; // length of the reply message and the bytes that a sent
+    length = strlen(reply_msg); // get lentgh of the reply message
+    bytes_sent = send(new_fd, reply_msg, length, 0); // send the reply message wiht send()
+    // check if the message was sent successfully
+    if (bytes_sent < 0) { // if the message was not sent
+        perror("ERROR while sending data");
+        return 2; // specific error
+    } else { // print the sent message
+        printf("Sent: %s\n", reply_msg);
+    }
+
+
+    // // getaddrinfo() returns a linked list of addrinfo structures
+    // status = getaddrinfo(argv[1], NULL, &hints, &res);
+    // if (status  != 0) {
+    //     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+    //     return 2;
+    // }
+
     freeaddrinfo(res); // free the linked list
+
+    // close the socket
+    close(sockfd);
 
     return 0;
 }
