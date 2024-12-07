@@ -80,6 +80,9 @@ int main(int argc, char *argv[])
         fprintf(stderr, "bind error: %s\n", gai_strerror(status));
     }
 
+    /*
+    * Setzt Optionen für den Server-Socket, zb. dass die Adresse bzw. der PORT erneut verwendet werden kann.
+    **/
     int yes=1;
     if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes) == -1) {
         perror("setsockopt failed...");
