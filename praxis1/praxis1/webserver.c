@@ -7,9 +7,12 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-#define BACKLOG 10     // Maximale Anzahl an Connections in der Listen-Queue
-#define MAXDATASIZE 8192
+#define BACKLOG 10 // Maximale Anzahl an Connections in der Listen-Queue
+#define MAXDATASIZE 8192 // Maximale Request und Response Größe in Bytes
 
+/*
+* Gibt die IPv4 oder IPv6-Adresse des mitgebenen sockaddr structs zurück
+**/
 void *get_in_addr(struct sockaddr *sa)
 {
     if (sa->sa_family == AF_INET) {
@@ -22,6 +25,9 @@ void *get_in_addr(struct sockaddr *sa)
 char *ok_req = "HTTP/1.1 200 OK\r\n\r\n";
 char *bad_req = "HTTP/1.1 400 Bad Request\r\n\r\n";
 
+/*
+* Gibt die korrekte Response-Message mit Status-Code zurück, je nach der HTTP-Semantik
+**/
 void get_response(char *msg) {
     memcpy(msg, bad_req, strlen(bad_req));
     msg[strlen(bad_req)] = '\0';
@@ -37,6 +43,9 @@ int main(int argc, char *argv[])
     struct addrinfo hints, *servinfo;
     char s[INET6_ADDRSTRLEN];
 
+    /*
+    * Holt IP-Adresse und Port für den Server aus den Argumenten beim ausführen des Servers.
+    **/
     const char *host = argv[1];
     const char *port = argv[2];
 
@@ -44,24 +53,29 @@ int main(int argc, char *argv[])
     printf("Host: %s Port: %s\n\n", host, port);
 
     memset(&hints, 0, sizeof hints); // struct sollte leer sein
-    hints.ai_family = AF_UNSPEC;     // don't care IPv4 or IPv6 (GUIDE)
-    hints.ai_socktype = SOCK_STREAM; // TCP stream socket
+    hints.ai_family = AF_UNSPEC;     // don't care IPv4 or IPv6 (aus dem GUIDE)
+    hints.ai_socktype = SOCK_STREAM; // TCP Stream Socket
 
-
-    // Adresse, Port und Einstellungen initialisieren
+    /*
+    * Speichert die mitgegebenen Daten in eine Referenz auf einen Struct
+    **/
     if ((status = getaddrinfo(host, port, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo error: %s\n", gai_strerror(status));
         exit(1);
     }
 
 
-    // Socket initialisieren
+    /*
+    * Initialisiert den Socket anhand den gegebenen Serverinformationen
+    **/
     if ((sock_fd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol)) == -1) {
         fprintf(stderr, "socket() init error: %s\n", gai_strerror(status));
         exit(1);
     }
 
-    // Socket-Discriptor an die Adresse Binden
+    /*
+    * Bindet den Socketdescriptor an den Socket
+    **/
     if ((status = bind(sock_fd, servinfo->ai_addr, servinfo->ai_addrlen)) == -1) {
         fprintf(stderr, "bind error: %s\n", gai_strerror(status));
     }
@@ -72,11 +86,15 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // Auf Connections Horchen/Listen
+    /*
+    * Wartet/Horcht auf eingehende Connections zum Server.
+    **/
     printf("----------------------------------- Opening Listen Socket -----------------------------------\n\n");
     listen(sock_fd, BACKLOG);
 
-    // Neue Verbindungen aus der Listen-Queue akzeptieren
+    /*
+    * Die erste Verbindungsanfrage aus der Listen-Queue, wird versucht anfzubauen.
+    **/
     addr_size = sizeof client_addr;
     client_fd = accept(sock_fd, (struct sockaddr *)&client_addr, &addr_size);
     printf("----------------------------------- First Connection -----------------------------------\n\n");
@@ -96,6 +114,9 @@ int main(int argc, char *argv[])
     memset(recv_buf, 0, MAXDATASIZE);
     while(1)  {
         printf("--------------------------- Waiting for Request from %s ---------------------------\n\n", s);
+        /*
+        * Der Datenstrom bis zum Byte [MAXDATASIZE-1] wird ausgelesen und in den Buffer gespeichert
+        **/
         if ((numbytes = recv(client_fd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv failed...");
             exit(1);
@@ -136,9 +157,11 @@ int main(int argc, char *argv[])
          **/
         if (recv_end != NULL) {
             printf("Recieved Package... \n\n");
-            // Antwort bei Erfolgreicher Verbindung zum Socket und korrekter Paket-Endung
+
+            /*
+             * Generiert eine Response-Antwort mit Statuscode und sendet diese an den Client zurück.
+             */
             char msg[MAXDATASIZE];
-            //char *msg = "Reply\r\n\r\n";
             get_response(msg);
             int len, bytes_sent;
             len = strlen(msg);
@@ -156,6 +179,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    /*
+    * Schließt alle verbundenen FDs bzw. den Socket und berreinigt den Speicher.
+    **/
     close(client_fd);
     close(sock_fd);
     freeaddrinfo(servinfo);
