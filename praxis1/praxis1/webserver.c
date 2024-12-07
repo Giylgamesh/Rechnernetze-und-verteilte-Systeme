@@ -42,7 +42,8 @@ int main(int argc, char *argv[])
     const char *host = argv[1];
     const char *port = argv[2];
 
-    printf("HOST: %s -----> PORT TO USE: %s", host, port);
+    printf("----------------------------------- Starting Webserver -----------------------------------\n\n");
+    printf("Host: %s Port: %s\n\n", host, port);
 
     memset(&hints, 0, sizeof hints); // struct sollte leer sein
     hints.ai_family = AF_UNSPEC;     // don't care IPv4 or IPv6 (GUIDE)
@@ -62,9 +63,6 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    printf("\nSocket() initialized File Descriptor value: %d\n", sock_fd);
-
-
     // Socket-Discriptor an die Adresse Binden
     if ((status = bind(sock_fd, servinfo->ai_addr, servinfo->ai_addrlen)) == -1) {
         fprintf(stderr, "bind error: %s\n", gai_strerror(status));
@@ -76,14 +74,14 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-
     // Auf Connections Horchen/Listen
-    printf("\nOpening Listen Socket...\n\n");
+    printf("----------------------------------- Opening Listen Socket -----------------------------------\n\n");
     listen(sock_fd, BACKLOG);
 
     // Neue Verbindungen aus der Listen-Queue akzeptieren
     addr_size = sizeof client_addr;
     client_fd = accept(sock_fd, (struct sockaddr *)&client_addr, &addr_size);
+    printf("----------------------------------- First Connection -----------------------------------\n\n");
     printf("\nTrying to accept Connection...\n\n");
     if (client_fd == -1) {
         perror("Couldn't accept Connection!");
@@ -99,13 +97,14 @@ int main(int argc, char *argv[])
     char recv_buf[MAXDATASIZE];
     memset(recv_buf, 0, MAXDATASIZE);
     while(1)  {
+        printf("--------------------------- Waiting for Request from %s ---------------------------\n\n", s);
         if ((numbytes = recv(client_fd, buf, MAXDATASIZE-1, 0)) == -1) {
             perror("recv failed...");
             exit(1);
         }
 
         if (numbytes == 0) {
-            printf("No Bytes received, closing Server...");
+            printf("No Bytes received, closing Server...\n\n");
             break;
         }
 
@@ -129,17 +128,16 @@ int main(int argc, char *argv[])
         recv_buf[buf_index] = '\0';
         memset(&buf, 0, numbytes);
 
-        printf("buf after memset: '%s'\n\n",buf);
-        printf("BUFFER READ: '%s'\n\n", recv_buf);
+        printf("Buffer recv_buf copy from buf: '%s'\n\n", recv_buf);
 
-        // Überprüft den Byte-Strom nach der Paket-Endung
+        // Überprüft den ganzen Buffer nach der Paket-Endung
         char *recv_end = strstr(recv_buf, "\r\n\r\n");
-        printf("recv_end: '%s'", recv_end);
+
         /*
          * Bei erfolgreichem finden eines Paketendes wird eine Antwort versendet
          **/
         if (recv_end != NULL) {
-            printf("Recieved Package with ending... \n");
+            printf("Recieved Package... \n\n");
             // Antwort bei Erfolgreicher Verbindung zum Socket und korrekter Paket-Endung
             char msg[MAXDATASIZE];
             //char *msg = "Reply\r\n\r\n";
@@ -156,13 +154,13 @@ int main(int argc, char *argv[])
             int move_index = buf_index - (recv_end + 4 - recv_buf);
             memmove(recv_buf, recv_buf + (recv_end + 4 - recv_buf), move_index);
             buf_index = 0;
-            printf("Bytes send: %d\n\n", bytes_sent);
+            printf("Sending Message with %d Bytes\n\n", bytes_sent);
         }
     }
 
     close(client_fd);
     close(sock_fd);
     freeaddrinfo(servinfo);
-    
+    printf("----------------------------------- Server fully Closed -----------------------------------\n\n");
     return 0;
 }
