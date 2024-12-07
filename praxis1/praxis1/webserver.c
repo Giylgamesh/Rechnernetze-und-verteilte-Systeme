@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 
 #define BACKLOG 10     // Maximale Anzahl an Connections in der Listen-Queue
-#define MAXDATASIZE 1024
+#define MAXDATASIZE 8192
 
 void *get_in_addr(struct sockaddr *sa)
 {
@@ -18,6 +18,14 @@ void *get_in_addr(struct sockaddr *sa)
     }
 
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
+char *ok_req = "HTTP/1.1 200 OK\r\n\r\n";
+char *bad_req = "HTTP/1.1 400 Bad Request\r\n\r\n";
+
+void get_response(char *msg) {
+    memcpy(msg, bad_req, strlen(bad_req));
+    msg[strlen(bad_req)] = '\0';
 }
 
 int main(int argc, char *argv[])
@@ -76,6 +84,7 @@ int main(int argc, char *argv[])
     // Neue Verbindungen aus der Listen-Queue akzeptieren
     addr_size = sizeof client_addr;
     client_fd = accept(sock_fd, (struct sockaddr *)&client_addr, &addr_size);
+    printf("\nTrying to accept Connection...\n\n");
     if (client_fd == -1) {
         perror("Couldn't accept Connection!");
     }
@@ -125,14 +134,16 @@ int main(int argc, char *argv[])
 
         // Überprüft den Byte-Strom nach der Paket-Endung
         char *recv_end = strstr(recv_buf, "\r\n\r\n");
-
+        printf("recv_end: '%s'", recv_end);
         /*
          * Bei erfolgreichem finden eines Paketendes wird eine Antwort versendet
          **/
         if (recv_end != NULL) {
             printf("Recieved Package with ending... \n");
             // Antwort bei Erfolgreicher Verbindung zum Socket und korrekter Paket-Endung
-            char *msg = "Reply\r\n\r\n";
+            char msg[MAXDATASIZE];
+            //char *msg = "Reply\r\n\r\n";
+            get_response(msg);
             int len, bytes_sent;
             len = strlen(msg);
             bytes_sent = send(client_fd, msg, len, 0);
