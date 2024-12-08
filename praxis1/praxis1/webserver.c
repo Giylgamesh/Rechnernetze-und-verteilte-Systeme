@@ -1,5 +1,6 @@
 #include <sys/types.h> // datentypen definieren (u.a. size_t)
 #include <sys/socket.h> // sockets erstellen und verwalten
+#include <signal.h> //impliziert auf mac aber nicht bei allen anderen systemen
 #include <netdb.h> // für das struct addrinfo (ip-adressen und ports)
 #include <stdio.h> // standard ein- und ausgabe
 #include <stdlib.h> // speicherverwaltung (u.a. malloc)
@@ -123,6 +124,11 @@ struct http_request *parse_request(char *buffer) {
         req->complete = 1;
         strncpy(req->method, buffer + matches[1].rm_so, matches[1].rm_eo - matches[1].rm_so);
         printf("[DEBUG] method: %s\n", req->method);
+        // TODO Tino added
+        // Wichtig NULL-Terminator!
+        size_t method_len = matches[1].rm_eo - matches[1].rm_so;
+        req->method[method_len] = '\0';`
+
         strncpy(req->uri, buffer + matches[2].rm_so, matches[2].rm_eo - matches[2].rm_so);
         printf("[DEBUG] uri: %s\n", req->uri);
         strncpy(req->http_version, buffer + matches[3].rm_so, matches[3].rm_eo - matches[3].rm_so);
@@ -161,7 +167,7 @@ static struct sockaddr_in derive_sockaddr(const char *host, const char *port) {
 
 // precompile regex for request line parsing
 void init_regex() {
-    int res = regcomp(&rex_request, "^(GET|DELETE|PUT|POST|HEAD|PATCH) (/[^ ]*) (HTTP/(1\\.0|1\\.1|2|3))",
+    int res = regcomp(&rex_request, "^(GET|DELETE|PUT|GETD|HEAD|PATCH) (/[^ ]*) (HTTP/(1\\.0|1\\.1|2|3))",
                       REG_EXTENDED);
     if (res) {
         fprintf(stderr, "error compiling regex\n");
@@ -237,7 +243,7 @@ void handle_http_request(int client_socket, struct http_request *req) {
                 }
             } else {
                 printf("[DEBUG] PUT request forbidden URI\n");
-                response = "HTTP/1.1 403 Forbidden\r\n\r\n";
+                response = "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n";
             }
         }
             // HANDLE DELETE REQUEST
@@ -256,7 +262,7 @@ void handle_http_request(int client_socket, struct http_request *req) {
                 }
             } else {
                 printf("[DEBUG] DELETE request forbidden URI\n");
-                response = "HTTP/1.1 403 Forbidden\r\n\r\n";
+                response = "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n";
             }
         }
             // Nicht unterstützte Anfragen, Fehlermeldung
