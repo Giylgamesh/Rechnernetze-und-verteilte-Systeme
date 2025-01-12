@@ -53,7 +53,7 @@ int check_is_responsible(uint16_t curr_node_id, struct node_addr pred_node, uint
     if (curr_node_id > succ_node.node_id && (uri_hash > curr_node_id || uri_hash <= succ_node.node_id)) {
         return 1;
     }
-    return 1;
+    return -1;
 }
 
 /**
