@@ -1,0 +1,5 @@
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/edit_cache.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/package_source.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/rebuild_cache.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/package.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/webserver.dir
