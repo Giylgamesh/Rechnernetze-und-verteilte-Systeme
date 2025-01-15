@@ -38,29 +38,46 @@ struct node_addr {
     uint16_t node_port;
 };
 
-struct waiting_response {
-    int responsible_node_id;
-    char uri[HTTP_MAX_SIZE];
+#define IS_RESPONSIBLE 0
+#define NOT_RESPONSIBLE 1
+#define SUCC_RESPONSIBLE 2
+
+#define MAX_TABLE_SIZE 10
+struct dht_table {
+    uint16_t resource_hash;
+    struct node_addr resp_node;
 };
 
-static struct waiting_response waiting_responses[MAX_WAITING_RESPONSES];
-static int waiting_response_count = 0;
+struct dht_table known_resources[MAX_TABLE_SIZE];
 
-static char requested_uri[HTTP_MAX_SIZE] = {0};
-static int client_fd_of_request = -1;
+void addResource(uint16_t uri_hash, struct node_addr resp_node) {
+    for (int i = 0; i < MAX_TABLE_SIZE; i++) {
+        if (known_resources[i].resource_hash == 0) {
+            known_resources[i].resource_hash = uri_hash;
+            known_resources[i].resp_node = resp_node;
+            printf("\nAdding %d to KNOWN_RESOURCES\n", uri_hash);
+            return;
+        }
+    }
+    known_resources[0].resource_hash = 0;
+    known_resources[0].resp_node.node_id = 0;
+    known_resources[0].resp_node.node_ip.s_addr = 0;
+    known_resources[0].resp_node.node_port = 0;
 
+    for (int j = 1; j < MAX_TABLE_SIZE; j++) {
+        known_resources[j - 1] = known_resources[j];
+    }
 
-void send_lookup_reply(int udp_socket, struct udp_msg *msg, struct sockaddr_in addr, uint16_t curr_node_id) {
+    printf("\nDeleting last KNOWN_RESOURCES entry and adding new entry to KNOWN_RESOURCES\n");
+}
+
+void send_lookup_reply(int udp_socket, struct udp_msg *msg, struct sockaddr_in addr, uint16_t resp_node_id, uint16_t pred_node_id) {
     struct udp_msg reply_msg;
     reply_msg.msg_type = 1;
-    reply_msg.hash_id = msg->hash_id;
-    reply_msg.node_id = htons(curr_node_id);
+    reply_msg.hash_id = pred_node_id;
+    reply_msg.node_id = htons(resp_node_id);
     reply_msg.node_ip = addr.sin_addr;
     reply_msg.node_port = addr.sin_port;
-
-    printf("Sending reply message: msg_type=%u, hash_id=%u, node_id=%u, node_ip=%s, node_port=%u\n",
-           reply_msg.msg_type, ntohs(reply_msg.hash_id), ntohs(reply_msg.node_id),
-           inet_ntoa(reply_msg.node_ip), ntohs(reply_msg.node_port));
 
     struct sockaddr_in to_addr;
     memset(&to_addr, 0, sizeof(to_addr));
@@ -73,17 +90,6 @@ void send_lookup_reply(int udp_socket, struct udp_msg *msg, struct sockaddr_in a
     } else {
         printf("\nREPLY sent to PRED_NODE: %s:%d\n", inet_ntoa(to_addr.sin_addr), ntohs(to_addr.sin_port));
     }
-}
-
-
-void send_resource_founded_redirect(struct node_addr responsible_node) {
-    char redir_res[HTTP_MAX_SIZE];
-    snprintf(redir_res, sizeof(redir_res),
-             "HTTP/1.1 303 See Other\r\n"
-             "Location: http://%s:%d%s\r\n"
-             "Content-Length: 0\r\n\r\n",
-             inet_ntoa(responsible_node.node_ip), ntohs(responsible_node.node_port), requested_uri);
-    send(client_fd_of_request, redir_res, strlen(redir_res), 0);
 }
 
 
@@ -102,7 +108,7 @@ void send_lookup_request(int udp_socket, struct node_addr succ_node, struct udp_
 }
 
 
-int check_is_responsible(uint16_t curr_node_id, struct node_addr pred_node, uint16_t uri_hash) {
+int check_is_responsible(uint16_t curr_node_id, struct node_addr pred_node, struct node_addr succ_node, uint16_t uri_hash) {
     // Check if node is between to nodes that contains the Key 0
     //        20         10
     if (curr_node_id < pred_node.node_id) {
@@ -110,42 +116,62 @@ int check_is_responsible(uint16_t curr_node_id, struct node_addr pred_node, uint
         if (uri_hash <= curr_node_id || uri_hash > pred_node.node_id) {
             printf("Resource is between two nodes that contains 0 as key\n");
             printf("Node is responsible for this resource\n");
-            return 0;
+            return IS_RESPONSIBLE;
         } else {
-            return 1;
+            return NOT_RESPONSIBLE;
         }
     }
     // Check if node is responsible for this hash
     //        18             10                18            20
     else if (uri_hash > pred_node.node_id && uri_hash <= curr_node_id) {
-        printf("Node is responsible, send reply to predecessor\n");
-        return 0;
-    }    
-    else {
-        printf("Node is not responsible for this resource\n");
-        return 1;
+        printf("Node is responsible for this resource\n");
+        return IS_RESPONSIBLE;
     }
-    printf("ERROR: No Node is not responsible for this resource in this DHT-Network\n");
-    return -1;
+
+    // Check if succesor is responsible for this resource
+    if (succ_node.node_id > curr_node_id) {
+        if (uri_hash > curr_node_id && uri_hash <= succ_node.node_id) {
+            printf("SUCC_NODE is responsible for this resource\n");
+            return SUCC_RESPONSIBLE;
+        }
+    } else {
+        if (uri_hash > curr_node_id || uri_hash <= succ_node.node_id) {
+            printf("SUCC_NODE is responsible for this resource\n");
+            return SUCC_RESPONSIBLE;
+        }
+    }
+
+    printf("Node is not responsible for this resource\n");
+    return NOT_RESPONSIBLE;
 }
 
 
 void lookup(uint16_t curr_node_id, struct udp_msg *msg, struct node_addr pred_node, struct node_addr succ_node, int udp_socket, struct sockaddr_in addr) {
 
-    int is_responsible = check_is_responsible(curr_node_id, pred_node, ntohs(msg->hash_id));
+    int is_responsible = check_is_responsible(curr_node_id, pred_node, succ_node, ntohs(msg->hash_id));
 
-    if (is_responsible == 0) {
-        send_lookup_reply(udp_socket, msg, addr, curr_node_id);
+    if (is_responsible == IS_RESPONSIBLE) {
+        send_lookup_reply(udp_socket, msg, addr, htons(curr_node_id), pred_node.node_id);
         return;
     }
-    if (is_responsible == 1) {
+    if (is_responsible == NOT_RESPONSIBLE) {
         struct udp_msg self_msg;
         self_msg.msg_type = 0;
         self_msg.hash_id = msg->hash_id;
-        self_msg.node_id = htons(curr_node_id);
-        self_msg.node_ip = addr.sin_addr;
-        self_msg.node_port = addr.sin_port;
+        self_msg.node_id = msg->node_id;
+        self_msg.node_ip = msg->node_ip;
+        self_msg.node_port = msg->node_port;
         send_lookup_request(udp_socket, succ_node, &self_msg);
+        return;
+    }
+    if (is_responsible == SUCC_RESPONSIBLE) {
+        struct sockaddr_in origin_addr;
+        memset(&addr, 0, sizeof(addr));
+        origin_addr.sin_family = AF_INET;
+        origin_addr.sin_addr = succ_node.node_ip;
+        origin_addr.sin_port = succ_node.node_port;
+
+        send_lookup_reply(udp_socket, msg, origin_addr, succ_node.node_id, htons(curr_node_id));
         return;
     }
 }
@@ -239,7 +265,7 @@ ssize_t process_packet(int conn, char *buffer, size_t n, uint16_t curr_node_id, 
         printf("URI_HASH: %d\n", uri_hash);
         printf("CURRENT NODE_ID: %d\n", curr_node_id);
 
-        int is_responsible = check_is_responsible(curr_node_id, pred_node, uri_hash);
+        int is_responsible = check_is_responsible(curr_node_id, pred_node, succ_node, uri_hash);
 
         // Current node is responsible, handle the http-request as usual
         if (is_responsible == 0) {
@@ -266,9 +292,6 @@ ssize_t process_packet(int conn, char *buffer, size_t n, uint16_t curr_node_id, 
                 msg.node_ip = addr.sin_addr;
                 msg.node_port = addr.sin_port;
                 send_lookup_request(udp_socket, succ_node, &msg);
-
-                strncpy(requested_uri, request.uri, sizeof(requested_uri));
-                client_fd_of_request = conn;
 
                 const char service_unavailable_retry_res[] =
                         "HTTP/1.1 503 Service Unavailable\r\n"
