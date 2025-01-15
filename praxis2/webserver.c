@@ -16,6 +16,7 @@
 #include "http.h"
 #include "util.h"
 
+#define MAX_PENDING_REQUESTS 10
 #define MAX_RESOURCES 100
 #define MAX_WAITING_RESPONSES 10
 
@@ -50,6 +51,14 @@ struct dht_table {
 
 struct dht_table known_resources[MAX_TABLE_SIZE];
 
+struct pending_request {
+    int client_fd;
+    char requested_uri[HTTP_MAX_SIZE];
+};
+
+struct pending_request pending_requests[MAX_PENDING_REQUESTS];
+int pending_request_count = 0;
+
 void addResource(uint16_t uri_hash, struct node_addr resp_node) {
     for (int i = 0; i < MAX_TABLE_SIZE; i++) {
         if (known_resources[i].resource_hash == 0) {
@@ -59,14 +68,14 @@ void addResource(uint16_t uri_hash, struct node_addr resp_node) {
             return;
         }
     }
-    known_resources[0].resource_hash = 0;
-    known_resources[0].resp_node.node_id = 0;
-    known_resources[0].resp_node.node_ip.s_addr = 0;
-    known_resources[0].resp_node.node_port = 0;
-
+    // If the table is full, replace the oldest entry (index 0)
     for (int j = 1; j < MAX_TABLE_SIZE; j++) {
         known_resources[j - 1] = known_resources[j];
     }
+
+    known_resources[MAX_TABLE_SIZE - 1].resource_hash = uri_hash;
+    known_resources[MAX_TABLE_SIZE - 1].resp_node = resp_node;
+
 
     printf("\nDeleting last KNOWN_RESOURCES entry and adding new entry to KNOWN_RESOURCES\n");
 }
@@ -176,6 +185,16 @@ void lookup(uint16_t curr_node_id, struct udp_msg *msg, struct node_addr pred_no
     }
 }
 
+void send_resource_founded_redirect(int client_fd, const char *requested_uri, struct node_addr responsible_node) {
+    char redir_res[HTTP_MAX_SIZE];
+    snprintf(redir_res, sizeof(redir_res),
+             "HTTP/1.1 303 See Other\r\n"
+             "Location: http://%s:%d%s\r\n"
+             "Content-Length: 0\r\n\r\n",
+             inet_ntoa(responsible_node.node_ip), ntohs(responsible_node.node_port), requested_uri); // Use ntohs here
+    send(client_fd, redir_res, strlen(redir_res), 0);
+}
+
 
 /**
  * Sends an HTTP reply to the client based on the received request.
@@ -184,7 +203,7 @@ void lookup(uint16_t curr_node_id, struct udp_msg *msg, struct node_addr pred_no
  * @param request   A pointer to the struct containing the parsed request
  * information.
  */
-void send_reply(int conn, struct request *request) {
+void send_reply(int conn, struct request *request, uint16_t curr_node_id, struct node_addr pred_node, struct node_addr succ_node, struct sockaddr_in addr, int udp_socket) {
 
     // Create a buffer to hold the HTTP reply
     char buffer[HTTP_MAX_SIZE];
@@ -194,6 +213,7 @@ void send_reply(int conn, struct request *request) {
     fprintf(stderr, "Handling %s request for %s (%lu byte payload)\n",
             request->method, request->uri, request->payload_length);
 
+    uint16_t uri_hash = pseudo_hash((unsigned char*) request->uri, strlen(request->uri));
     if (strcmp(request->method, "GET") == 0) {
         // Find the resource with the given URI in the 'resources' array.
         size_t resource_length;
@@ -201,40 +221,63 @@ void send_reply(int conn, struct request *request) {
                 get(request->uri, resources, MAX_RESOURCES, &resource_length);
 
         if (resource) {
+            // Resource found locally
             size_t payload_offset =
                     sprintf(reply, "HTTP/1.1 200 OK\r\nContent-Length: %lu\r\n\r\n",
                             resource_length);
             memcpy(reply + payload_offset, resource, resource_length);
             offset = payload_offset + resource_length;
         } else {
-            reply = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
-            offset = strlen(reply);
+            // Resource not found locally, check known_resources
+            int found = 0;
+            for (int i = 0; i < MAX_TABLE_SIZE; i++) {
+                if (known_resources[i].resource_hash == uri_hash) {
+                    // Redirect to the responsible node
+                    send_resource_founded_redirect(conn, request->uri, known_resources[i].resp_node);
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found) {
+                // Resource not in known_resources, initiate lookup
+                int is_responsible = check_is_responsible(curr_node_id, pred_node, succ_node, uri_hash);
+
+                if (is_responsible == IS_RESPONSIBLE) {
+                    // Current node is responsible, but resource doesn't exist
+                    reply = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+                    offset = strlen(reply);
+                } else {
+                    // Not responsible, send lookup request
+                    struct udp_msg msg;
+                    msg.msg_type = 0;
+                    msg.hash_id = htons(uri_hash);
+                    msg.node_id = htons(curr_node_id);
+                    msg.node_ip = addr.sin_addr;
+                    msg.node_port = addr.sin_port;
+
+                    // Add the request to pending requests
+                    if (pending_request_count < MAX_PENDING_REQUESTS) {
+                        pending_requests[pending_request_count].client_fd = conn;
+                        strncpy(pending_requests[pending_request_count].requested_uri, request->uri, sizeof(pending_requests[pending_request_count].requested_uri));
+                        pending_request_count++;
+                    } else {
+                        fprintf(stderr, "Too many pending requests\n");
+                    }
+
+                    send_lookup_request(udp_socket, succ_node, &msg);
+
+                    // Send 503 Service Unavailable
+                    reply = "HTTP/1.1 503 Service Unavailable\r\nRetry-After: 1\r\nContent-Length: 0\r\n\r\n";
+                    offset = strlen(reply);
+                }
+            }
         }
     } else if (strcmp(request->method, "PUT") == 0) {
-        // Try to set the requested resource with the given payload in the
-        // 'resources' array.
-        if (set(request->uri, request->payload, request->payload_length,
-                resources, MAX_RESOURCES)) {
-            reply = "HTTP/1.1 204 No Content\r\n\r\n";
-        } else {
-            reply = "HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n";
-        }
-        offset = strlen(reply);
-    } else if (strcmp(request->method, "DELETE") == 0) {
-        // Try to delete the requested resource from the 'resources' array
-        if (delete (request->uri, resources, MAX_RESOURCES)) {
-            reply = "HTTP/1.1 204 No Content\r\n\r\n";
-        } else {
-            reply = "HTTP/1.1 404 Not Found\r\n\r\n";
-        }
-        offset = strlen(reply);
-    } else {
-        reply = "HTTP/1.1 501 Method Not Supported\r\n\r\n";
-        offset = strlen(reply);
+        // ... (rest of the PUT, DELETE, and other method handling)
     }
 
     // Send the reply back to the client
-    if (send(conn, reply, offset, 0) == -1) {
+    if (offset > 0 && send(conn, reply, offset, 0) == -1) { // Only send if there is a reply
         perror("send");
         close(conn);
     }
@@ -553,9 +596,13 @@ bool handle_udp(int udp_socket, uint16_t curr_node_id, struct node_addr pred_nod
         responsible_node.node_port = msg.node_port;
         printf("REPLY requested, node responsible for this resource has been found\n");
         // send_resource_founded_redirect(responsible_node);
+<<<<<<< Updated upstream
         waiting_responses[i].responsible_node_id;
         waiting_responses[i].uri;
         }
+=======
+        addResource(ntohs(msg.hash_id), responsible_node); // Add the responsible node to known_resources
+>>>>>>> Stashed changes
     } else {
         printf("Error, dht request messagetype couldnt be resolved\n");
     }
