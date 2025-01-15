@@ -1,8 +1,8 @@
 CMakeFiles/webserver.dir/util.c.o: \
- /mnt/e/Uni/Rechnernetze\ und\ Verteilte\ Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/util.c \
+ /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/util.c \
  /usr/include/stdc-predef.h \
- /mnt/e/Uni/Rechnernetze\ und\ Verteilte\ Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/util.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
+ /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/util.h \
+ /usr/lib/gcc/x86_64-linux-gnu/11/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
  /usr/include/features.h /usr/include/features-time64.h \
  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
@@ -16,9 +16,8 @@ CMakeFiles/webserver.dir/util.c.o: \
  /usr/include/x86_64-linux-gnu/bits/time64.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-intn.h \
- /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
- /usr/include/x86_64-linux-gnu/bits/stdint-least.h /usr/include/stdlib.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
+ /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h /usr/include/stdlib.h \
+ /usr/lib/gcc/x86_64-linux-gnu/11/include/stddef.h \
  /usr/include/x86_64-linux-gnu/bits/waitflags.h \
  /usr/include/x86_64-linux-gnu/bits/waitstatus.h \
  /usr/include/x86_64-linux-gnu/bits/floatn.h \
@@ -48,14 +47,13 @@ CMakeFiles/webserver.dir/util.c.o: \
  /usr/include/x86_64-linux-gnu/bits/errno.h /usr/include/linux/errno.h \
  /usr/include/x86_64-linux-gnu/asm/errno.h \
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
- /usr/include/stdio.h /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
+ /usr/include/stdio.h /usr/lib/gcc/x86_64-linux-gnu/11/include/stdarg.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
- /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h /usr/include/string.h \
  /usr/include/x86_64-linux-gnu/bits/types/locale_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__locale_t.h \

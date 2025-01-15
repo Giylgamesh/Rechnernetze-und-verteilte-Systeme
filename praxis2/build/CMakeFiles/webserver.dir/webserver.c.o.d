@@ -1,5 +1,5 @@
 CMakeFiles/webserver.dir/webserver.c.o: \
- /mnt/e/Uni/Rechnernetze\ und\ Verteilte\ Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/webserver.c \
+ /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/webserver.c \
  /usr/include/stdc-predef.h /usr/include/arpa/inet.h \
  /usr/include/features.h /usr/include/features-time64.h \
  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
@@ -14,7 +14,7 @@ CMakeFiles/webserver.dir/webserver.c.o: \
  /usr/include/x86_64-linux-gnu/bits/time64.h \
  /usr/include/x86_64-linux-gnu/sys/socket.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_iovec.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
+ /usr/lib/gcc/x86_64-linux-gnu/11/include/stddef.h \
  /usr/include/x86_64-linux-gnu/bits/socket.h \
  /usr/include/x86_64-linux-gnu/sys/types.h \
  /usr/include/x86_64-linux-gnu/bits/types/clock_t.h \
@@ -62,18 +62,16 @@ CMakeFiles/webserver.dir/webserver.c.o: \
  /usr/include/rpc/netdb.h /usr/include/x86_64-linux-gnu/bits/netdb.h \
  /usr/include/poll.h /usr/include/x86_64-linux-gnu/sys/poll.h \
  /usr/include/x86_64-linux-gnu/bits/poll.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h /usr/include/stdint.h \
+ /usr/lib/gcc/x86_64-linux-gnu/11/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
- /usr/include/x86_64-linux-gnu/bits/wchar.h \
- /usr/include/x86_64-linux-gnu/bits/stdint-least.h /usr/include/stdio.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h \
+ /usr/include/x86_64-linux-gnu/bits/wchar.h /usr/include/stdio.h \
+ /usr/lib/gcc/x86_64-linux-gnu/11/include/stdarg.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
- /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
  /usr/include/x86_64-linux-gnu/bits/floatn.h \
  /usr/include/x86_64-linux-gnu/bits/floatn-common.h /usr/include/string.h \
@@ -86,10 +84,10 @@ CMakeFiles/webserver.dir/webserver.c.o: \
  /usr/include/x86_64-linux-gnu/bits/getopt_posix.h \
  /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
  /usr/include/x86_64-linux-gnu/bits/unistd_ext.h \
- /mnt/e/Uni/Rechnernetze\ und\ Verteilte\ Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/data.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/stdbool.h /usr/include/stdlib.h \
+ /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/data.h \
+ /usr/lib/gcc/x86_64-linux-gnu/11/include/stdbool.h /usr/include/stdlib.h \
  /usr/include/x86_64-linux-gnu/bits/waitflags.h \
  /usr/include/x86_64-linux-gnu/bits/waitstatus.h /usr/include/alloca.h \
  /usr/include/x86_64-linux-gnu/bits/stdlib-float.h \
- /mnt/e/Uni/Rechnernetze\ und\ Verteilte\ Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/util.h \
- /mnt/e/Uni/Rechnernetze\ und\ Verteilte\ Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/http.h
+ /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/util.h \
+ /mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/http.h

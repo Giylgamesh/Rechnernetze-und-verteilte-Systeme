@@ -8,18 +8,14 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/data.c" "CMakeFiles/webserver.dir/data.c.o" "gcc" "CMakeFiles/webserver.dir/data.c.o.d"
-  "/mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/http.c" "CMakeFiles/webserver.dir/http.c.o" "gcc" "CMakeFiles/webserver.dir/http.c.o.d"
-  "/mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/util.c" "CMakeFiles/webserver.dir/util.c.o" "gcc" "CMakeFiles/webserver.dir/util.c.o.d"
-  "/mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/webserver.c" "CMakeFiles/webserver.dir/webserver.c.o" "gcc" "CMakeFiles/webserver.dir/webserver.c.o.d"
+  "/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/data.c" "CMakeFiles/webserver.dir/data.c.o" "gcc" "CMakeFiles/webserver.dir/data.c.o.d"
+  "/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/http.c" "CMakeFiles/webserver.dir/http.c.o" "gcc" "CMakeFiles/webserver.dir/http.c.o.d"
+  "/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/util.c" "CMakeFiles/webserver.dir/util.c.o" "gcc" "CMakeFiles/webserver.dir/util.c.o.d"
+  "/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/webserver.c" "CMakeFiles/webserver.dir/webserver.c.o" "gcc" "CMakeFiles/webserver.dir/webserver.c.o.d"
   )
 
-# Targets to which this target links which contain Fortran sources.
-set(CMAKE_Fortran_TARGET_LINKED_INFO_FILES
-  )
-
-# Targets to which this target links which contain Fortran sources.
-set(CMAKE_Fortran_TARGET_FORWARD_LINKED_INFO_FILES
+# Targets to which this target links.
+set(CMAKE_TARGET_LINKED_INFO_FILES
   )
 
 # Fortran module output directory.

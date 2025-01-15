@@ -1,5 +1,5 @@
-/mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/webserver.dir
-/mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/package.dir
-/mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/package_source.dir
-/mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/edit_cache.dir
-/mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/webserver.dir
+/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/package.dir
+/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/package_source.dir
+/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/edit_cache.dir
+/mnt/c/Users/vladi/Documents/GitHub/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/rebuild_cache.dir

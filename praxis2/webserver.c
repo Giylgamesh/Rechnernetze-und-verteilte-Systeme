@@ -17,6 +17,7 @@
 #include "util.h"
 
 #define MAX_RESOURCES 100
+#define MAX_WAITING_RESPONSES 10
 
 struct tuple resources[MAX_RESOURCES] = {
         {"/static/foo", "Foo", sizeof "Foo" - 1},
@@ -36,6 +37,14 @@ struct node_addr {
     struct in_addr node_ip;
     uint16_t node_port;
 };
+
+struct waiting_response {
+    int responsible_node_id;
+    char uri[HTTP_MAX_SIZE];
+};
+
+static struct waiting_response waiting_responses[MAX_WAITING_RESPONSES];
+static int waiting_response_count = 0;
 
 static char requested_uri[HTTP_MAX_SIZE] = {0};
 static int client_fd_of_request = -1;
@@ -95,6 +104,7 @@ void send_lookup_request(int udp_socket, struct node_addr succ_node, struct udp_
 
 int check_is_responsible(uint16_t curr_node_id, struct node_addr pred_node, uint16_t uri_hash) {
     // Check if node is between to nodes that contains the Key 0
+    //        20         10
     if (curr_node_id < pred_node.node_id) {
         // Check if node is responsible for this hash
         if (uri_hash <= curr_node_id || uri_hash > pred_node.node_id) {
@@ -106,10 +116,12 @@ int check_is_responsible(uint16_t curr_node_id, struct node_addr pred_node, uint
         }
     }
     // Check if node is responsible for this hash
+    //        18             10                18            20
     else if (uri_hash > pred_node.node_id && uri_hash <= curr_node_id) {
-        printf("Node is responsible, sending Lookup to successor\n");
+        printf("Node is responsible, send reply to predecessor\n");
         return 0;
-    } else {
+    }    
+    else {
         printf("Node is not responsible for this resource\n");
         return 1;
     }
@@ -510,13 +522,17 @@ bool handle_udp(int udp_socket, uint16_t curr_node_id, struct node_addr pred_nod
     if (dht_flag == 0) {
         printf("LOOKUP requested, checking for responsibilty of this resource\n");
         lookup(curr_node_id, &msg, pred_node, succ_node, udp_socket, node_addr);
-    } else if (dht_flag == 1) {
+    } else if (dht_flag == 1) { // reply requested
+        for (int i = 0; i < waiting_response_count; i++){
         struct node_addr responsible_node;
         responsible_node.node_id = msg.node_id;
         responsible_node.node_ip = msg.node_ip;
         responsible_node.node_port = msg.node_port;
         printf("REPLY requested, node responsible for this resource has been found\n");
         // send_resource_founded_redirect(responsible_node);
+        waiting_responses[i].responsible_node_id;
+        waiting_responses[i].uri;
+        }
     } else {
         printf("Error, dht request messagetype couldnt be resolved\n");
     }
