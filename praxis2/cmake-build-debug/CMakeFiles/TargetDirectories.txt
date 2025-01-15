@@ -1,5 +1,13 @@
+<<<<<<< HEAD
 /mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/cmake-build-debug/CMakeFiles/webserver.dir
 /mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/cmake-build-debug/CMakeFiles/package.dir
 /mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/cmake-build-debug/CMakeFiles/package_source.dir
 /mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/cmake-build-debug/CMakeFiles/edit_cache.dir
 /mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+=======
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/cmake-build-debug/CMakeFiles/edit_cache.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/cmake-build-debug/CMakeFiles/package_source.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/cmake-build-debug/CMakeFiles/package.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/cmake-build-debug/CMakeFiles/webserver.dir
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53

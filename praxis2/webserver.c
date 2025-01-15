@@ -19,9 +19,15 @@
 #define MAX_RESOURCES 100
 
 struct tuple resources[MAX_RESOURCES] = {
+<<<<<<< HEAD
         {"/static/foo", "Foo", sizeof "Foo" - 1},
         {"/static/bar", "Bar", sizeof "Bar" - 1},
         {"/static/baz", "Baz", sizeof "Baz" - 1}};
+=======
+    {"/static/foo", "Foo", sizeof "Foo" - 1},
+    {"/static/bar", "Bar", sizeof "Bar" - 1},
+    {"/static/baz", "Baz", sizeof "Baz" - 1}};
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
 
 struct udp_msg {
     uint16_t msg_type;
@@ -37,6 +43,7 @@ struct node_addr {
     uint16_t node_port;
 };
 
+<<<<<<< HEAD
 static char requested_uri[HTTP_MAX_SIZE] = {0};
 static int client_fd_of_request = -1;
 
@@ -129,6 +136,27 @@ void lookup(uint16_t curr_node_id, struct udp_msg *msg, struct node_addr pred_no
 }
 
 
+=======
+
+int check_is_responsible(uint16_t curr_node_id, struct node_addr pred_node, uint16_t uri_hash, struct node_addr succ_node) {
+    // is responsible
+    if (pred_node.node_id < curr_node_id && uri_hash > pred_node.node_id && uri_hash <= curr_node_id) {
+        return 0;
+    }
+    if (pred_node.node_id > curr_node_id && (uri_hash > pred_node.node_id || uri_hash <= curr_node_id)) {
+        return 0;
+    }
+    // is not responsible but successor
+    if (curr_node_id < succ_node.node_id && uri_hash > curr_node_id && uri_hash <= succ_node.node_id) {
+        return 1;
+    }
+    if (curr_node_id > succ_node.node_id && (uri_hash > curr_node_id || uri_hash <= succ_node.node_id)) {
+        return 1;
+    }
+    return -1;
+}
+
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
 /**
  * Sends an HTTP reply to the client based on the received request.
  *
@@ -150,12 +178,21 @@ void send_reply(int conn, struct request *request) {
         // Find the resource with the given URI in the 'resources' array.
         size_t resource_length;
         const char *resource =
+<<<<<<< HEAD
                 get(request->uri, resources, MAX_RESOURCES, &resource_length);
 
         if (resource) {
             size_t payload_offset =
                     sprintf(reply, "HTTP/1.1 200 OK\r\nContent-Length: %lu\r\n\r\n",
                             resource_length);
+=======
+            get(request->uri, resources, MAX_RESOURCES, &resource_length);
+
+        if (resource) {
+            size_t payload_offset =
+                sprintf(reply, "HTTP/1.1 200 OK\r\nContent-Length: %lu\r\n\r\n",
+                        resource_length);
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
             memcpy(reply + payload_offset, resource, resource_length);
             offset = payload_offset + resource_length;
         } else {
@@ -206,13 +243,20 @@ void send_reply(int conn, struct request *request) {
  * malformed or an error occurs during processing, the return value is -1.
  *
  */
+<<<<<<< HEAD
 ssize_t process_packet(int conn, char *buffer, size_t n, uint16_t curr_node_id, struct node_addr pred_node, struct node_addr succ_node, struct sockaddr_in addr, int udp_socket) {
     struct request request = {
             .method = NULL, .uri = NULL, .payload = NULL, .payload_length = -1};
+=======
+ssize_t process_packet(int conn, char *buffer, size_t n, uint16_t curr_node_id, struct node_addr pred_node, struct node_addr succ_node) {
+    struct request request = {
+        .method = NULL, .uri = NULL, .payload = NULL, .payload_length = -1};
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
     ssize_t bytes_processed = parse_request(buffer, n, &request);
 
     if (bytes_processed > 0) {
         uint16_t uri_hash = pseudo_hash((unsigned char*) request.uri, strlen(request.uri));
+<<<<<<< HEAD
         printf("\nProcessing Packet and checking for responsibility of the requested resource\n");
         printf("URI_HASH: %d\n", uri_hash);
         printf("CURRENT NODE_ID: %d\n", curr_node_id);
@@ -243,6 +287,30 @@ ssize_t process_packet(int conn, char *buffer, size_t n, uint16_t curr_node_id, 
                          "Content-Length: 0\r\n\r\n";
             send(conn, service_unavailable_retry_res, strlen(service_unavailable_retry_res), 0);
         }
+=======
+
+        int is_responsible = check_is_responsible(curr_node_id, pred_node, uri_hash, succ_node);
+
+        if (is_responsible == 0) {
+            send_reply(conn, &request);
+        }
+        if (is_responsible == 1) {
+            char redir_res[HTTP_MAX_SIZE];
+            snprintf(redir_res, sizeof(redir_res),
+                     "HTTP/1.1 303 See Other\r\n"
+                     "Location: http://%s:%d%s\r\n"
+                     "Content-Length: 0\r\n\r\n",
+                     inet_ntoa(succ_node.node_ip), succ_node.node_port, request.uri);
+            send(conn, redir_res, strlen(redir_res), 0);
+        }
+        // if (is_responsible == -1) {
+        //     const char service_unavailable_res[] =
+        //             "HTTP/1.1 503 Service Unavailable\r\n"
+        //             "Retry-After: 1\r\n"
+        //             "Content-Length: 0\r\n\r\n";
+        //     send(conn, service_unavailable_res, strlen(service_unavailable_res), 0);
+        // }
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
 
         // Check the "Connection" header in the request to determine if the
         // connection should be kept alive or closed.
@@ -310,13 +378,21 @@ char *buffer_discard(char *buffer, size_t discard, size_t keep) {
  * false otherwise. If an error occurs while receiving data from the socket, the
  * function exits the program.
  */
+<<<<<<< HEAD
 bool handle_connection(struct connection_state *state, uint16_t curr_node_id, struct node_addr pred_node, struct node_addr succ_node, struct sockaddr_in addr, int udp_socket) {
+=======
+bool handle_connection(struct connection_state *state, uint16_t curr_node_id, struct node_addr pred_node, struct node_addr succ_node) {
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
     // Calculate the pointer to the end of the buffer to avoid buffer overflow
     const char *buffer_end = state->buffer + HTTP_MAX_SIZE;
 
     // Check if an error occurred while receiving data from the socket
     ssize_t bytes_read =
+<<<<<<< HEAD
             recv(state->sock, state->end, buffer_end - state->end, 0);
+=======
+        recv(state->sock, state->end, buffer_end - state->end, 0);
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
     if (bytes_read == -1) {
         perror("recv");
         close(state->sock);
@@ -330,7 +406,11 @@ bool handle_connection(struct connection_state *state, uint16_t curr_node_id, st
 
     ssize_t bytes_processed = 0;
     while ((bytes_processed = process_packet(state->sock, window_start,
+<<<<<<< HEAD
                                              window_end - window_start, curr_node_id, pred_node, succ_node, addr, udp_socket)) > 0) {
+=======
+                                             window_end - window_start, curr_node_id, pred_node, succ_node)) > 0) {
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
         window_start += bytes_processed;
     }
     if (bytes_processed == -1) {
@@ -356,7 +436,11 @@ bool handle_connection(struct connection_state *state, uint16_t curr_node_id, st
  */
 static struct sockaddr_in derive_sockaddr(const char *host, const char *port) {
     struct addrinfo hints = {
+<<<<<<< HEAD
             .ai_family = AF_INET,
+=======
+        .ai_family = AF_INET,
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
     };
     struct addrinfo *result_info;
 
@@ -454,6 +538,7 @@ static int setup_udp_socket(struct sockaddr_in addr) {
 }
 
 
+<<<<<<< HEAD
 void handle_udp_msg(struct udp_msg *msg, char *buffer) {
     memcpy(msg, buffer, sizeof(struct udp_msg));
     printf("\nReceived UDP/DHT message: %s\n", buffer);
@@ -466,6 +551,32 @@ bool handle_udp(int udp_socket, uint16_t curr_node_id, struct node_addr pred_nod
     ssize_t bytes_received = recvfrom(udp_socket, buffer, sizeof(struct udp_msg), 0, (struct sockaddr *)&addr, (socklen_t *)&addr);
 
     printf("\n\n[UDP PACKET] Bytes recieved: %zu\n\n", bytes_received);
+=======
+void handle_udp_msg(char *buffer, struct udp_msg *msg, uint16_t curr_node_id, struct node_addr pred_node, struct node_addr succ_node, int udp_socket, struct sockaddr_in *addr) {
+    memcpy(buffer, msg, sizeof(struct udp_msg));
+    printf("Received UDP message: %s\n", buffer);
+}
+
+
+void lookup(struct udp_msg *msg, struct node_addr succ_node, int udp_socket) {
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(succ_node.node_port);
+    addr.sin_addr = succ_node.node_ip;
+
+    if (sendto(udp_socket, msg, sizeof(struct udp_msg), 0, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+        perror("sendto");
+    } else {
+        printf("LOOKUP sent to SUCC_NODE: %s:%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+    }
+}
+
+bool handle_udp(int udp_socket, uint16_t curr_node_id, struct node_addr pred_node, struct node_addr succ_node) {
+    char buffer[HTTP_MAX_SIZE];
+    struct sockaddr_in addr;
+    size_t bytes_received = recvfrom(udp_socket, buffer, sizeof(struct udp_msg), 0, (struct sockaddr *)&addr, (socklen_t *)&addr);
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
 
     if (bytes_received == -1) {
         perror("recv");
@@ -476,12 +587,17 @@ bool handle_udp(int udp_socket, uint16_t curr_node_id, struct node_addr pred_nod
 
     struct udp_msg msg;
 
+<<<<<<< HEAD
     handle_udp_msg(&msg, buffer);
+=======
+    handle_udp_msg(buffer, &msg, curr_node_id, pred_node, succ_node, udp_socket, &addr);
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
 
     printf("  msg_type: %d\n", msg.msg_type);
     printf("  hash_id: %d\n", msg.hash_id);
     printf("  node_id: %d\n", msg.node_id);
     printf("  node_ip: %s\n", inet_ntoa(msg.node_ip));
+<<<<<<< HEAD
     printf("  node_port: %d\n\n", msg.node_port);
 
     if (msg.msg_type == 0) {
@@ -496,6 +612,17 @@ bool handle_udp(int udp_socket, uint16_t curr_node_id, struct node_addr pred_nod
         send_resource_founded_redirect(responsible_node);
     } else {
         printf("Error, dht request messagetype couldnt be resolved\n");
+=======
+    printf("  node_port: %d\n", msg.node_port);
+
+    if (msg.msg_type == 0) {
+        printf("LOOKUP...\n");
+        lookup(&msg, succ_node, udp_socket);
+    } else if (msg.msg_type == 1) {
+        printf("REPLY...\n");
+    } else {
+        printf("Error...\n");
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
     }
 
     return true;
@@ -573,8 +700,13 @@ int main(int argc, char **argv) {
 
     // Create an array of pollfd structures to monitor sockets.
     struct pollfd sockets[2] = {
+<<<<<<< HEAD
             {.fd = server_socket, .events = POLLIN},
             {.fd = udp_socket, .events = POLLIN},
+=======
+        {.fd = server_socket, .events = POLLIN},
+        {.fd = udp_socket, .events = POLLIN},
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
     };
 
     struct connection_state state = {0};
@@ -617,7 +749,11 @@ int main(int argc, char **argv) {
             }
 
             else if (sockets[i].fd == udp_socket) {
+<<<<<<< HEAD
                 handle_udp(udp_socket, curr_node_id, pred_node, succ_node, addr);
+=======
+                handle_udp(udp_socket, curr_node_id, pred_node, succ_node);
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
             }
 
             else {
@@ -625,7 +761,11 @@ int main(int argc, char **argv) {
 
                 // Call the 'handle_connection' function to process the incoming
                 // data on the socket.
+<<<<<<< HEAD
                 bool cont = handle_connection(&state, curr_node_id, pred_node, succ_node, addr, udp_socket);
+=======
+                bool cont = handle_connection(&state, curr_node_id, pred_node, succ_node);
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
                 if (!cont) { // get ready for a new connection
                     sockets[0].events = POLLIN;
                     sockets[1].fd = -1;
@@ -637,4 +777,8 @@ int main(int argc, char **argv) {
     }
 
     return EXIT_SUCCESS;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53

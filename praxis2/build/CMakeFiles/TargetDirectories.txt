@@ -1,5 +1,13 @@
+<<<<<<< HEAD
 /mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/webserver.dir
 /mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/package.dir
 /mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/package_source.dir
 /mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/edit_cache.dir
 /mnt/e/Uni/Rechnernetze und Verteilte Systeme/main/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/rebuild_cache.dir
+=======
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/edit_cache.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/package_source.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/rebuild_cache.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/package.dir
+/mnt/d/RNVS/Rechnernetze-und-verteilte-Systeme/praxis2/build/CMakeFiles/webserver.dir
+>>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
