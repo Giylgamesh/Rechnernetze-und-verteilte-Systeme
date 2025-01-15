@@ -1,7 +1,3 @@
-<<<<<<< HEAD
 ToolSet: Ubuntu 24.04.1 LTS (remote)Options: 
-=======
-ToolSet: Ubuntu 20.04.6 LTS (remote)Options: 
->>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
 
 Options:

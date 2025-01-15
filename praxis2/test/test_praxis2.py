@@ -78,11 +78,7 @@ def test_listen(static_peer):
 
 
 @pytest.mark.timeout(1)
-<<<<<<< HEAD
-@pytest.mark.parametrize("uri", ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])
-=======
 @pytest.mark.parametrize("uri", ['a', 'b', 'aa', 'ab', 'ac', 'ad', 'klm', 'xyz'])
->>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
 def test_immediate_dht(static_peer, uri):
     """Test hashing of request (1.2)
     Run peer in minimal (non-trivial) DHT
@@ -125,11 +121,7 @@ def test_immediate_dht(static_peer, uri):
 
 
 @pytest.mark.timeout(1)
-<<<<<<< HEAD
-@pytest.mark.parametrize("uri", ['a', 'b'])
-=======
 @pytest.mark.parametrize("uri", ['a', 'aa'])
->>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
 def test_lookup_sent(static_peer, uri):
     """Test for lookup to correct peer (1.3)
 
@@ -227,11 +219,7 @@ def test_lookup_forward(static_peer):
 
 
 @pytest.mark.timeout(1)
-<<<<<<< HEAD
-@pytest.mark.parametrize("uri", ['a', 'b'])
-=======
 @pytest.mark.parametrize("uri", ['a', 'aa'])
->>>>>>> 0abcf641de2c5d12781ae030ae06baad283f2c53
 def test_lookup_complete(static_peer, uri):
     """Test for correct lookup use (1.6)
 

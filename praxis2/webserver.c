@@ -23,8 +23,8 @@ struct tuple resources[MAX_RESOURCES] = {
         {"/static/bar", "Bar", sizeof "Bar" - 1},
         {"/static/baz", "Baz", sizeof "Baz" - 1}};
 
-struct udp_msg {
-    uint16_t msg_type;
+struct __attribute__((packed)) udp_msg {
+    uint8_t msg_type;
     uint16_t hash_id;
     uint16_t node_id;
     struct in_addr node_ip;
@@ -43,22 +43,22 @@ static int client_fd_of_request = -1;
 
 void send_lookup_reply(int udp_socket, struct udp_msg *msg, struct sockaddr_in addr, uint16_t curr_node_id) {
     struct udp_msg reply_msg;
-    reply_msg.msg_type = 1;
+    reply_msg.msg_type = htons(1);
     reply_msg.hash_id = msg->hash_id;
-    reply_msg.node_id = curr_node_id;
+    reply_msg.node_id = htons(curr_node_id);
     reply_msg.node_ip = addr.sin_addr;
     reply_msg.node_port = addr.sin_port;
 
     struct sockaddr_in to_addr;
     memset(&to_addr, 0, sizeof(to_addr));
     to_addr.sin_family = AF_INET;
-    to_addr.sin_port = htons(msg->node_port);
+    to_addr.sin_port = msg->node_port;
     to_addr.sin_addr = msg->node_ip;
 
     if (sendto(udp_socket, &reply_msg, sizeof(struct udp_msg), 0, (struct sockaddr *)&to_addr, sizeof(to_addr)) == -1) {
         perror("sendto");
     } else {
-        printf("\nREPLY sent to ORIGINAL_NODE: %s:%d\n", inet_ntoa(msg->node_ip), htons(msg->node_port));
+        printf("\nREPLY sent to ORIGINAL_NODE: %s:%d\n", inet_ntoa(to_addr.sin_addr), ntohs(to_addr.sin_port));
     }
 }
 
@@ -69,7 +69,7 @@ void send_resource_founded_redirect(struct node_addr responsible_node) {
              "HTTP/1.1 303 See Other\r\n"
              "Location: http://%s:%d%s\r\n"
              "Content-Length: 0\r\n\r\n",
-             inet_ntoa(responsible_node.node_ip), responsible_node.node_port, requested_uri);
+             inet_ntoa(responsible_node.node_ip), ntohs(responsible_node.node_port), requested_uri);
     send(client_fd_of_request, redir_res, strlen(redir_res), 0);
 }
 
@@ -78,7 +78,7 @@ void send_lookup_request(int udp_socket, struct node_addr succ_node, struct udp_
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(succ_node.node_port);
+    addr.sin_port = succ_node.node_port;
     addr.sin_addr = succ_node.node_ip;
 
     if (sendto(udp_socket, msg, sizeof(struct udp_msg), 0, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
@@ -226,22 +226,34 @@ ssize_t process_packet(int conn, char *buffer, size_t n, uint16_t curr_node_id, 
 
         // Current node is not responsible for this resource, then send a lookup to successor node
         if (is_responsible == 1) {
-            struct udp_msg msg;
-            msg.msg_type = 0;
-            msg.hash_id = uri_hash;
-            msg.node_id = curr_node_id;
-            msg.node_ip = addr.sin_addr;
-            msg.node_port = ntohs(addr.sin_port);
-            send_lookup_request(udp_socket, succ_node, &msg);
 
-            strncpy(requested_uri, request.uri, sizeof(requested_uri));
-            client_fd_of_request = conn;
+            if (succ_node.node_id == pred_node.node_id) {
+                printf("\n\nDHT is a minimal DHT Network, sending redirect\n\n");
+                char redir_res[HTTP_MAX_SIZE];
+                snprintf(redir_res, sizeof(redir_res),
+                         "HTTP/1.1 303 See Other\r\n"
+                         "Location: http://%s:%d%s\r\n"
+                         "Content-Length: 0\r\n\r\n",
+                         inet_ntoa(succ_node.node_ip), ntohs(succ_node.node_port), request.uri);
+                send(conn, redir_res, strlen(redir_res), 0);
+            } else {
+                struct udp_msg msg;
+                msg.msg_type = htons(0);
+                msg.hash_id = htons(uri_hash);
+                msg.node_id = htons(curr_node_id);
+                msg.node_ip = addr.sin_addr;
+                msg.node_port = addr.sin_port;
+                send_lookup_request(udp_socket, succ_node, &msg);
 
-            const char service_unavailable_retry_res[] =
-                         "HTTP/1.1 503 Service Unavailable\r\n"
-                         "Retry-After: 1\r\n"
-                         "Content-Length: 0\r\n\r\n";
-            send(conn, service_unavailable_retry_res, strlen(service_unavailable_retry_res), 0);
+                strncpy(requested_uri, request.uri, sizeof(requested_uri));
+                client_fd_of_request = conn;
+
+                const char service_unavailable_retry_res[] =
+                        "HTTP/1.1 503 Service Unavailable\r\n"
+                        "Retry-After: 1\r\n"
+                        "Content-Length: 0\r\n\r\n";
+                send(conn, service_unavailable_retry_res, strlen(service_unavailable_retry_res), 0);
+            }
         }
 
         // Check the "Connection" header in the request to determine if the
@@ -478,11 +490,11 @@ bool handle_udp(int udp_socket, uint16_t curr_node_id, struct node_addr pred_nod
 
     handle_udp_msg(&msg, buffer);
 
-    printf("  msg_type: %d\n", msg.msg_type);
-    printf("  hash_id: %d\n", msg.hash_id);
-    printf("  node_id: %d\n", msg.node_id);
+    printf("  msg_type: %d\n", ntohs(msg.msg_type));
+    printf("  hash_id: %d\n", ntohs(msg.hash_id));
+    printf("  node_id: %d\n", ntohs(msg.node_id));
     printf("  node_ip: %s\n", inet_ntoa(msg.node_ip));
-    printf("  node_port: %d\n\n", msg.node_port);
+    printf("  node_port: %d\n\n", ntohs(msg.node_port));
 
     if (msg.msg_type == 0) {
         printf("LOOKUP requested, checking for responsibilty of this resource\n");
@@ -516,7 +528,7 @@ struct node_addr get_pred_node_addr() {
 
     addr.node_id = (uint16_t)atoi(id);
     inet_aton(ip, &addr.node_ip);
-    addr.node_port = (uint16_t)atoi(port);
+    addr.node_port = htons((uint16_t)atoi(port));
 
     return addr;
 }
@@ -535,7 +547,7 @@ struct node_addr get_succ_node_addr() {
 
     addr.node_id = (uint16_t)atoi(id);
     inet_aton(ip, &addr.node_ip);
-    addr.node_port = (uint16_t)atoi(port);
+    addr.node_port = htons((uint16_t)atoi(port));
 
     return addr;
 }
@@ -564,8 +576,8 @@ int main(int argc, char **argv) {
     }
 
     printf("CURRENT_NODE_ID: %d\n", curr_node_id);
-    printf("PRED: ID:%d, IP:%s, Port:%d\n", pred_node.node_id, inet_ntoa(pred_node.node_ip), pred_node.node_port);
-    printf("SUCC: ID:%d, IP:%s, Port:%d\n", succ_node.node_id, inet_ntoa(succ_node.node_ip), succ_node.node_port);
+    printf("PRED: ID:%d, IP:%s, Port:%d\n", pred_node.node_id, inet_ntoa(pred_node.node_ip), ntohs(pred_node.node_port));
+    printf("SUCC: ID:%d, IP:%s, Port:%d\n", succ_node.node_id, inet_ntoa(succ_node.node_ip), ntohs(succ_node.node_port));
 
     // Set up a TCP and UDP server socket.
     int server_socket = setup_server_socket(addr);
