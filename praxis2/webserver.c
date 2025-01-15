@@ -49,6 +49,10 @@ void send_lookup_reply(int udp_socket, struct udp_msg *msg, struct sockaddr_in a
     reply_msg.node_ip = addr.sin_addr;
     reply_msg.node_port = addr.sin_port;
 
+    printf("Sending reply message: msg_type=%u, hash_id=%u, node_id=%u, node_ip=%s, node_port=%u\n",
+           reply_msg.msg_type, ntohs(reply_msg.hash_id), ntohs(reply_msg.node_id),
+           inet_ntoa(reply_msg.node_ip), ntohs(reply_msg.node_port));
+
     struct sockaddr_in to_addr;
     memset(&to_addr, 0, sizeof(to_addr));
     to_addr.sin_family = AF_INET;
@@ -496,7 +500,7 @@ bool handle_udp(int udp_socket, uint16_t curr_node_id, struct node_addr pred_nod
 
     handle_udp_msg(&msg, buffer);
 
-    printf("  msg_type: %d\n", ntohs(msg.msg_type));
+    printf("  msg_type: %d\n", msg.msg_type);
     printf("  hash_id: %d\n", ntohs(msg.hash_id));
     printf("  node_id: %d\n", ntohs(msg.node_id));
     printf("  node_ip: %s\n", inet_ntoa(msg.node_ip));
@@ -513,7 +517,7 @@ bool handle_udp(int udp_socket, uint16_t curr_node_id, struct node_addr pred_nod
         responsible_node.node_ip = msg.node_ip;
         responsible_node.node_port = msg.node_port;
         printf("REPLY requested, node responsible for this resource has been found\n");
-        send_resource_founded_redirect(responsible_node);
+        // send_resource_founded_redirect(responsible_node);
     } else {
         printf("Error, dht request messagetype couldnt be resolved\n");
     }
