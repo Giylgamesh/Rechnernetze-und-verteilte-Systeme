@@ -95,17 +95,17 @@ void send_lookup_request(int udp_socket, struct node_addr succ_node, struct udp_
 
 int check_is_responsible(uint16_t curr_node_id, struct node_addr pred_node, uint16_t uri_hash) {
     // Check if node is between to nodes that contains the Key 0
-    if (curr_node_id < pred_node.node_id && (uri_hash <= curr_node_id || uri_hash > pred_node.node_id)) {
-        printf("Resource is between two nodes that contains 0 as key\n");
+    if (curr_node_id < pred_node.node_id) {
         // Check if node is responsible for this hash
-        printf("Node is responsible for this resource\n");
-        return 0;
-        /*if (uri_hash <= curr_node_id || uri_hash > pred_node.node_id) {
+        if (uri_hash <= curr_node_id || uri_hash > pred_node.node_id) {
+            printf("Resource is between two nodes that contains 0 as key\n");
             printf("Node is responsible for this resource\n");
             return 0;
-        }*/
+        } else {
+            return 1;
+        }
     }
-        // Check if node is responsible for this hash
+    // Check if node is responsible for this hash
     else if (uri_hash > pred_node.node_id && uri_hash <= curr_node_id) {
         printf("Node is responsible, sending Lookup to successor\n");
         return 0;
@@ -478,7 +478,6 @@ static int setup_udp_socket(struct sockaddr_in addr) {
 
 void handle_udp_msg(struct udp_msg *msg, char *buffer) {
     memcpy(msg, buffer, sizeof(struct udp_msg));
-    printf("\nReceived UDP/DHT message: %s\n", buffer);
 }
 
 
