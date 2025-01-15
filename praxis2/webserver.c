@@ -43,7 +43,7 @@ static int client_fd_of_request = -1;
 
 void send_lookup_reply(int udp_socket, struct udp_msg *msg, struct sockaddr_in addr, uint16_t curr_node_id) {
     struct udp_msg reply_msg;
-    reply_msg.msg_type = htons(1);
+    reply_msg.msg_type = 1;
     reply_msg.hash_id = msg->hash_id;
     reply_msg.node_id = htons(curr_node_id);
     reply_msg.node_ip = addr.sin_addr;
@@ -58,7 +58,7 @@ void send_lookup_reply(int udp_socket, struct udp_msg *msg, struct sockaddr_in a
     if (sendto(udp_socket, &reply_msg, sizeof(struct udp_msg), 0, (struct sockaddr *)&to_addr, sizeof(to_addr)) == -1) {
         perror("sendto");
     } else {
-        printf("\nREPLY sent to ORIGINAL_NODE: %s:%d\n", inet_ntoa(to_addr.sin_addr), ntohs(to_addr.sin_port));
+        printf("\nREPLY sent to PRED_NODE: %s:%d\n", inet_ntoa(to_addr.sin_addr), ntohs(to_addr.sin_port));
     }
 }
 
@@ -116,14 +116,20 @@ int check_is_responsible(uint16_t curr_node_id, struct node_addr pred_node, uint
 
 void lookup(uint16_t curr_node_id, struct udp_msg *msg, struct node_addr pred_node, struct node_addr succ_node, int udp_socket, struct sockaddr_in addr) {
 
-    int is_responsible = check_is_responsible(curr_node_id, pred_node, msg->hash_id);
+    int is_responsible = check_is_responsible(curr_node_id, pred_node, ntohs(msg->hash_id));
 
     if (is_responsible == 0) {
         send_lookup_reply(udp_socket, msg, addr, curr_node_id);
         return;
     }
     if (is_responsible == 1) {
-        send_lookup_request(udp_socket, succ_node, msg);
+        struct udp_msg self_msg;
+        self_msg.msg_type = 0;
+        self_msg.hash_id = msg->hash_id;
+        self_msg.node_id = htons(curr_node_id);
+        self_msg.node_ip = addr.sin_addr;
+        self_msg.node_port = addr.sin_port;
+        send_lookup_request(udp_socket, succ_node, &self_msg);
         return;
     }
 }
@@ -238,7 +244,7 @@ ssize_t process_packet(int conn, char *buffer, size_t n, uint16_t curr_node_id, 
                 send(conn, redir_res, strlen(redir_res), 0);
             } else {
                 struct udp_msg msg;
-                msg.msg_type = htons(0);
+                msg.msg_type = 0;
                 msg.hash_id = htons(uri_hash);
                 msg.node_id = htons(curr_node_id);
                 msg.node_ip = addr.sin_addr;
@@ -496,10 +502,12 @@ bool handle_udp(int udp_socket, uint16_t curr_node_id, struct node_addr pred_nod
     printf("  node_ip: %s\n", inet_ntoa(msg.node_ip));
     printf("  node_port: %d\n\n", ntohs(msg.node_port));
 
-    if (msg.msg_type == 0) {
+    int dht_flag = msg.msg_type;
+
+    if (dht_flag == 0) {
         printf("LOOKUP requested, checking for responsibilty of this resource\n");
         lookup(curr_node_id, &msg, pred_node, succ_node, udp_socket, node_addr);
-    } else if (msg.msg_type == 1) {
+    } else if (dht_flag == 1) {
         struct node_addr responsible_node;
         responsible_node.node_id = msg.node_id;
         responsible_node.node_ip = msg.node_ip;
