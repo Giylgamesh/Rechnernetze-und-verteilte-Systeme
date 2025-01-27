@@ -1,0 +1,10 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": " BUILD WEBSERVER ( CMAKE ) ",
+            "command": "cmake -B build -D CMAKE_BUILD_TYPE=Debug && make -C build",
+            "type": "shell"
+        }
+    ]
+}
