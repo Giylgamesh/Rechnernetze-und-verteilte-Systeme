@@ -1,0 +1,4 @@
+Hello, world! This is a TEST.123 Some_numbers 45areNotWords.
+C@de_Ex4mple with-symbols! and123numbers
+UPPERcaseANDlowercase MixedCaSeWord
+...hello..again...New---Word
