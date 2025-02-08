@@ -149,9 +149,74 @@ void convert_digit(const char *input, char *output) {
     output[out_index] = '\0';  // Null-terminate output string
 }
 
+// AUSGABE SCHREIBEN
+// Paare bilden
+typedef struct {
+    char word[MAX_WORD_LEN];
+    int frequency;
+} WordFreq;
+
+// Vergleichen zum Sortieren
+// 1. Nach Anzahl
+// 2. Alphabetisch
+int compare(const void *a, const void *b) {
+    WordFreq *w1 = (WordFreq *)a;
+    WordFreq *w2 = (WordFreq *)b;
+
+    if (w2->frequency != w1->frequency) {
+        return w2->frequency - w1->frequency; // Nach Anzahl
+    }
+    return strcmp(w1->word, w2->word); // Alphabetisch
+}
+
+void print_output(const char *input) {
+    WordFreq words[MAX_WORDS];  // Buffer
+    int word_count = 0;
+
+    int i = 0, len = strlen(input);
+
+    // Parse input string
+    while (i < len) {
+        char word[MAX_WORD_LEN] = {0}; // Wort speichern
+        char number[10] = {0};         // Zahl speichern
+        int word_index = 0, num_index = 0;
+
+        // Extract word
+        while (i < len && isalpha(input[i])) {
+            word[word_index++] = input[i];
+            i++;
+        }
+        word[word_index] = '\0'; // Null
+
+        // Anzahl rausziehen
+        while (i < len && isdigit(input[i])) {
+            number[num_index++] = input[i];
+            i++;
+        }
+        number[num_index] = '\0'; // Null
+
+        // Ins array schreiben
+        if (word_index > 0 && num_index > 0) {
+            words[word_count].frequency = atoi(number);
+            strcpy(words[word_count].word, word);
+            word_count++;
+        }
+    }
+
+    // sortieren
+    qsort(words, word_count, sizeof(WordFreq), compare);
+
+    // Schreiben
+    printf("word,frequency\n"); // Uebersxhrift
+    for (int j = 0; j < word_count; j++) {
+        printf("%s,%d\n", words[j].word, words[j].frequency);
+    }
+}
+
+
 // Test the function
     int main() {
-        char input[] = "Hello, world! This is a TEST.123 Some_numbers 45areNotWords.\n"
+        char input[] = "Hello world! This is a test to test and see what words we can count and see HOW often they show up\n"
                        "C@de_Ex4mple with-symbols! and123numbers\n"
                        "UPPERcaseANDlowercase MixedCaSeWord\n"
                        "...hello..again...New---Word";
@@ -173,7 +238,7 @@ void convert_digit(const char *input, char *output) {
         convert_digit(counted_output, converted_output );
         printf("Result: \n%s\n", converted_output);
 
+        print_output(converted_output);
+
         return 0;
 }
-
-
