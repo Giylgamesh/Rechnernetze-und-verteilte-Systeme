@@ -6,12 +6,6 @@
 #include "common.h"
 //#include <zmq.h>
 
-#define MAX_MSG_LEN 1500
-#define MAX_WORD_LEN 1500
-#define MAX_PAYLOAD 1497
-#define MAX_WORKERS 12
-#define MAX_WORDS 750
-
 // CHUNK IN LISTE UMWANDELN
 // Inhalt in Liste von Wörtern umwandeln
  char* chunk_to_list(const char *text, long size) {
@@ -56,7 +50,8 @@ typedef struct {
 } WordCount;
 
 // Wörter zaehlen
-void count_words(const char *input, char *output) {
+char* count_words(const char *input, char *output) {
+    char word_buffer[MAX_PAYLOAD]; // oben definiert
     WordCount words[MAX_WORDS];
     int word_count = 0;
     char temp[MAX_WORD_LEN];
@@ -144,18 +139,3 @@ void count_words(const char *input, char *output) {
         return 0;
 }
 
-
-// LISTE AN DISTRIBUTOR SCHICKEN
-// TODO
-
-
-// ERGEBNISSE ZUSAMMENZAEHLEN
-// TODO
-
-
-// AN DISTRIBUTOR SCHICKEN
-// TODO
-
-
-// MAIN
-// TODO
