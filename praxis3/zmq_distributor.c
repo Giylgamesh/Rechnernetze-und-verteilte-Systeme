@@ -27,7 +27,7 @@
 int read_file(const char *filename, long *size, char **fileContent) {
     FILE *file = fopen(filename, "r"); //Lesemodus
     if (!file) {
-        perror("Fehler beim Datei öffnen");
+        perror("Fehler beim Datei oeffnen");
         return RETURN_FAILURE;
     }
 
@@ -36,8 +36,8 @@ int read_file(const char *filename, long *size, char **fileContent) {
     *size = ftell(file); // Ende gleich Größe
     rewind(file); // Wieder zum Anfang gehen (WICHTIG!)
 
-    // Bufferspeicher plus Nullbyte
-    *fileContent = malloc((*size + 1) * sizeof(char));
+    // Bufferspeicher plus Nullbyte '\0 == zwei bytes???'
+    *fileContent = malloc((*size + 2) * sizeof(char));
     if (!*fileContent) {
         perror("Fehler bei der Speicher-Allokation");
         fclose(file);
@@ -56,67 +56,164 @@ int read_file(const char *filename, long *size, char **fileContent) {
 /**
  * Hier wird der Buffer in Chunks aufgeteilt, indem am Ende eines Wortes der Nullterminator angehängt wird.
  *
- * @param buffer
+ * @param fileContent
  * @param size
  * @return
  */
-int split_words(char *buffer, long size) {
+int split_words(char *fileContent, long size) {
     int num_words = 0;
-    bool has_word_ended = false; // Auf true setzen, wenn der in der Schleife betrachtete Zeichen kein Buchstabe ist.
+    long chunk_size = 0;  // Aktuelle Chunk-Größe
+    bool inside_word = false;
 
     for (long i = 0; i < size; i++) {
-        bool isAlpha = isalpha(buffer[i]);
+        bool isAlpha = isalpha(fileContent[i]);
+
         if (isAlpha) {
-            if (has_word_ended) {
+            if (!inside_word) {
+                inside_word = true;
                 num_words++;
-                has_word_ended = false;
             }
+            chunk_size++;
         } else {
-            if (!has_word_ended) {
-                buffer[i] = '\0';
-                has_word_ended = true;
+            if (inside_word) {
+                inside_word = false;
+
+                // Falls Chunk-Grenze erreicht oder überschritten wird: trennen
+                if (chunk_size >= MAX_CHUNK_SIZE) {
+                    fileContent[i] = '\0';
+                    chunk_size = 0;
+                }
             }
         }
     }
 
-    // Jedes gefundene Wort untereinander ausgeben [DEBUG]
-    char *ptr = buffer;
-    printf("Gefundene Wörter:\n");
-    while (*ptr != '\0') {
-        printf("[%s]\n", ptr);
-        ptr += strlen(ptr) + 1;  // nächstes Wort
-    }
-
-    printf("\nAnzahl Wörter: %d\n", num_words);
+    printf("\nAnzahl Worter: %d\n", num_words);
     return num_words;
 }
 
-// Chunks verteilen
-/*
-void distribute_chunks(char **chunks, int num_chunks, int num_workers, ChunkAssignment *assignments) {
-    for (int i = 0; i < num_chunks; i++) {
-        assignments[i].worker_id = i % num_workers;  // Round-Robin
-        assignments[i].chunk = chunks[i];  // Pointer zum String
+
+/**
+ *
+ * Die erstellen Threads senden jeweils eine Map-Anfrage an den Worker und
+ * danach nochmal eine Reduce-Anfrage mit der Antwort des Workers.
+ *
+ * 1. 'map' type Anfrage an den Worker mit dem Chunk im Payload
+ * 2. Gemappte Antwort von Worker empfangen
+ * 3. Diese Antwort wieder an den Worker senden, diesmal aber mit 'red' als type
+ * 4. Nach erfolgreicher Antwort des Workers, beenden wir den Process mit einer 'rip' Anfrage
+ *
+ * @param argWorker
+ * @return
+ */
+void *request_worker(void *argWorker) {
+    Worker *worker = (Worker *)argWorker;
+
+    printf("\n[Thread] Thread erstellt. Beginne mit Verarbeitung\n");
+    printf("[Thread] Baut Verbindung zum Worker mit dem Port %s auf\n", worker->port);
+
+    char worker_adress[60];
+    snprintf(worker_adress, sizeof(worker_adress), "tcp://localhost:%s", worker->port);
+    printf("[Thread] Versuche Verbindung zum Worker aufzubauen unter: %s\n", worker_adress);
+
+    void *context = zmq_ctx_new();
+    void *socket = zmq_socket(context, ZMQ_REQ);
+    if (zmq_connect(socket, worker_adress) == -1) {
+        perror("[Thread] Verbindung zum Worker fehlgeschlagen");
+        zmq_close(socket);
+        zmq_ctx_destroy(context);
+        return NULL;
     }
+
+    printf("[Thread] Verbindung aufgebaut zum Worker: %s\n", worker_adress);
+
+    /**
+     *
+     * Erste Map-Anfrage an den Worker
+     *
+     */
+    char request[MAX_MSG_LENGTH] = {0};
+    memset(request, 0, MAX_MSG_LENGTH);
+    memcpy(request, "map", 3);
+    size_t chunk_size = strnlen(worker->chunk, MAX_MSG_LENGTH - 3);
+    size_t send_size = 3 + chunk_size;
+    memcpy(request + 3, worker->chunk, chunk_size);
+
+    if (zmq_send(socket, request, send_size, 0) == -1) {
+        perror("[Thread] Senden des Request an Worker fehlgeschlagen");
+        zmq_close(socket);
+        zmq_ctx_destroy(context);
+        return NULL;
+    }
+    printf("\n[Thread] Anfrage an Worker: %s.......\n", request);
+
+    /**
+     *
+     * Antwort auf die erste Map-Anfrage des Workers
+     *
+     */
+    char response[MAX_MSG_LENGTH] = {0};
+    int recv_length = zmq_recv(socket, response, MAX_MSG_LENGTH - 1, 0);
+    if (recv_length == -1) {
+        perror("[Thread] Erhalten der Response vom Worker fehlgeschlagen");
+        zmq_close(socket);
+        zmq_ctx_destroy(context);
+        return NULL;
+    }
+    response[recv_length] = '\0';
+
+    printf("[Thread] Antwort vom Worker: %s\n", response);
+
+    /**
+     *
+     * Zweite Reduce-Anfrage an den Worker
+     *
+     */
+    memset(request, 0, MAX_MSG_LENGTH);
+    memcpy(request, "red", 3);
+    size_t mapped_payload_size = strnlen(response, MAX_MSG_LENGTH - 3);
+    size_t mapped_payload_send_size = 3 + chunk_size;
+    memcpy(request + 3, response, mapped_payload_size);
+
+    if (zmq_send(socket, request, mapped_payload_send_size, 0) == -1) {
+        perror("[Thread] Senden des Request an Worker fehlgeschlagen");
+        zmq_close(socket);
+        zmq_ctx_destroy(context);
+        return NULL;
+    }
+    printf("\n[Thread] Anfrage an Worker: %s.......\n", request);
+
+    /**
+     *
+     * Antwort der zweiten Reduce-Anfrage des Worker
+     *
+     */
+    memset(response, 0, MAX_MSG_LENGTH);
+    recv_length = zmq_recv(socket, response, MAX_MSG_LENGTH - 1, 0);
+    if (recv_length == -1) {
+        perror("[Thread] Erhalten der Response vom Worker fehlgeschlagen");
+        zmq_close(socket);
+        zmq_ctx_destroy(context);
+        return NULL;
+    }
+    response[recv_length] = '\0';
+
+    /**
+     *
+     * Beenden des Worker-Prozesses mit einer rip-Anfrage
+     *
+     */
+    if (zmq_send(socket, "rip", send_size, 0) == -1) {
+        perror("[Thread] Senden des Request an Worker fehlgeschlagen");
+        zmq_close(socket);
+        zmq_ctx_destroy(context);
+        return NULL;
+    }
+
+    zmq_close(socket);
+    zmq_ctx_destroy(context);
+
+    return NULL;
 }
-*/
-
-// CHUNKS AN WORKER SENDEN
-char *request_worker(Worker worker, char chunk) {
-
-}
-
-
-// CHUNK ERGEBNISSE SAMMELN
-// TODO
-
-
-// GESAMMELTE ERGEBNISSE AN WORKER SENDEN
-// TODO
-
-
-// RUECKGABE SORTIEREN
-// TODO
 
 
 /**
@@ -127,6 +224,9 @@ char *request_worker(Worker worker, char chunk) {
  * @return
  */
 int main(int argc, char *argv[]) {
+    setvbuf(stdout, NULL, _IONBF, 0); // Buffer deaktivieren
+    setvbuf(stderr, NULL, _IONBF, 0);
+
     if (argc < 2) {
         printf("\nEs fehlen Eingabeargumente: argv[0]: _eingabe_Datei, argv[1, ..., n] Ports von den Worker\n");
         return EXIT_FAILURE;
@@ -138,15 +238,16 @@ int main(int argc, char *argv[]) {
 
     // Anzahl Worker
     int num_workers = argc - 2;
-    printf("\n%d Workers:\n\n", num_workers);
+    printf("\n%d Workers:\n", num_workers);
 
     // Jeder Worker erhält ein Thread
     pthread_t threads[num_workers];
 
-    Worker worker[num_workers];
+    Worker *worker = calloc(num_workers, sizeof(Worker));
+    memset(worker, 0, num_workers * sizeof(Worker));
     // Ports von den Worker im Worker Array initialisieren
     for (int i = 0; i < num_workers; i++) {
-        worker[i].chunk = NULL;
+        worker[i].chunk = "";
         worker[i].port = argv[2 + i];
         printf("Worker %d ist auf Port %s\n", i + 1, worker[i].port);
     }
@@ -166,16 +267,20 @@ int main(int argc, char *argv[]) {
     long file_size;
     char *file_content = NULL;
     if (read_file(argv[1], &file_size, &file_content) == -1) {
+        free(file_content);
+        free(worker);
         return EXIT_FAILURE;
     }
     if (!file_content) {
         printf("\n\nKein Inhalt in der Datei: %s\n", argv[0]);
+        free(file_content);
+        free(worker);
         return EXIT_FAILURE;
     } else {
-        printf("\n\nGelesener Dateiinhalt:\n\n%s\n\n", file_content);
+        // printf("\nGelesener Dateiinhalt:\n%s\n\n", file_content);
         // file_content String in Wort-Chunks 'Wort1\0Wort2\0Wort3\0' aufteilen
         // die einzelnen Chunks vom String (file_content) wird dann an verschiedene Worker verteilt
-        int chunks_count = split_words(file_content, file_size);
+        int words_count = split_words(file_content, file_size);
 
 
         /**
@@ -183,16 +288,62 @@ int main(int argc, char *argv[]) {
          *
          * TODO:
          * - pthread erstellen aus dem pthread[num_workers] Array und chunks an worker aufteilen
-         * - char request_worker(Worker worker[i], char chunk)   Funktion erstellen
+         * - char request_worker(Worker worker[i], char chunk) Funktion erstellen
          * - auf Antwort waren
          *
          */
 
 
-        if (chunks_count > 0) {
-            printf("\n\nString an Worker: %s", file_content);
+        if (words_count > 0) {
+            int words_per_worker = words_count / num_workers;
+            char *ptr = file_content;
+
+            for (int j = 0; j < num_workers; j++) {
+                worker[j].chunk = ptr; // Den Chunk in für jeden Worker speichern
+                int current_word = 0;
+
+                if (j == num_workers - 1) {
+                    // Falls es der letzte Worker ist, soll er die restlichen Wörte bekommen.
+                    if (ptr < file_content + file_size) {
+                        while (*ptr != '\0') {
+                            ptr += strlen(ptr) + 1;
+                            current_word++;
+                        }
+                    }
+                } else {
+                    // Jeder andere Worker kriegt anteilig eine Anzahl an Wörter
+                    while (*ptr != '\0' && current_word <= words_per_worker) {
+                        ptr += strlen(ptr) + 1; // nächstes Wort
+                        current_word++;
+                    }
+                }
+
+                printf("Anzahl Woerter fuer Worker[%d]: %d\n\n", j, current_word);
+
+                if (ptr >= file_content + file_size) {
+                    printf("\nAufteilung der Woerter beendet...\n\n");
+                    break;
+                }
+            }
+
+            // Für jeden Worker mit dem man kommuniziert einen Thread
+            for (int i = 0; i < num_workers; i++) {
+                if (pthread_create(&threads[i], NULL, request_worker, &worker[i]) != 0) {
+                    perror("Thread konnte nicht erstellt werden!");
+                    free(file_content);
+                    free(worker);
+                    return EXIT_FAILURE;
+                }
+            }
+
+            for (int i = 0; i < num_workers; i++) {
+                pthread_join(threads[i], NULL);
+            }
+
         } else {
-            printf("Keine Chunks bzw. Wörter gefunden!");
+            printf("Keine Chunks bzw. Woerter gefunden!");
+            free(file_content);
+            free(worker);
             return EXIT_FAILURE;
         }
     }
@@ -217,5 +368,6 @@ int main(int argc, char *argv[]) {
 
     // Speicher freigeben
     free(file_content);
+    free(worker);
     return EXIT_SUCCESS;
 }
