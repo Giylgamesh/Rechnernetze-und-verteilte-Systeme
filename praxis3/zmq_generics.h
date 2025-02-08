@@ -11,17 +11,26 @@
 
 #define RETURN_FAILURE -1
 
-#define MAX_CHUNK_SIZE 512
+#define MAX_CHUNK_SIZE 1497
 #define MAX_MSG_LENGTH 1500
 
-struct Worker {
+typedef struct Worker {
     char *chunk;
     char *port;
-} typedef Worker;
+} Worker;
 
-struct Request {
+typedef struct WorkerAdressList {
+    char *address;
+} WorkerAdressList;
+
+typedef struct Request {
     char type[3];
     char *payload[MAX_MSG_LENGTH - 3];
-} typedef Request;
+} Request;
+
+typedef struct {
+    char word[MAX_MSG_LENGTH];
+    int count;
+} WordCount;
 
 #endif //RN_PRAXIS_ZMQ_GENERICS_H
