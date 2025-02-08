@@ -49,7 +49,7 @@ typedef struct {
     int count;
 } WordCount;
 
-// Wörter zaehlen
+// WOERTER ZAEHLEN
 char* count_words(const char *input, char *output) {
     char word_buffer[MAX_PAYLOAD]; // oben definiert
     WordCount words[MAX_WORDS];
@@ -119,23 +119,61 @@ char* count_words(const char *input, char *output) {
     }
 }
 
+// ZAHLEN ANPASSEN
+void convert_digit(const char *input, char *output) {
+    int len = strlen(input);
+    int out_index = 0;
+    int i = 0;
+
+    while (i < len) {
+        output[out_index++] = input[i];  // Kopieren
+
+        // Einsen
+        if (input[i] == '1') {
+            int count = 0;
+
+            // einsen zaehlen
+            while (i < len && input[i] == '1') {
+                count++;
+                i++;
+            }
+
+            // In zahl umwandeln
+            out_index--;  // Remove the last copied '1'
+            out_index += sprintf(&output[out_index], "%d", count);
+        } else {
+            i++;
+        }
+    }
+
+    output[out_index] = '\0';  // Null-terminate output string
+}
+
 // Test the function
     int main() {
-        char input[] = "The example text is the best example.";
+        char input[] = "Hello, world! This is a TEST.123 Some_numbers 45areNotWords.\n"
+                       "C@de_Ex4mple with-symbols! and123numbers\n"
+                       "UPPERcaseANDlowercase MixedCaSeWord\n"
+                       "...hello..again...New---Word";
         char input2[] = "mapInteroperability test. Test uses python distributor.";
 
         char chunked_output[MAX_PAYLOAD];  // Buffer to store chunked words
         char counted_output[5000];         // Buffer to store counted words
+        char converted_output[5000];
 
         // Step 1: Convert chunk to list
-        chunk_to_list(input2, strlen(input2)); // This prints the words
+        chunk_to_list(input, strlen(input2)); // This prints the words
 
         // Step 2: Count words
-        count_words(input2, counted_output);
+        count_words(input, counted_output);
 
         // Step 3: Print the result
         printf("Word Count Result:\n%s\n", counted_output);
 
+        convert_digit(counted_output, converted_output );
+        printf("Result: \n%s\n", converted_output);
+
         return 0;
 }
+
 
