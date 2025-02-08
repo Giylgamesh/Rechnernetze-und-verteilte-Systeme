@@ -206,6 +206,8 @@ void *create_worker_thread(void *worker_adress) {
 
         } else if (strcmp(type, "rip") == 0) {
             printf("Worker wird heruntergefahren...\n");
+            memset(response, 0, MAX_MSG_LENGTH);
+            memcpy(response, "rip", 3);
             zmq_send(socket, response, strlen(response) + 1, 0);
             break;
 

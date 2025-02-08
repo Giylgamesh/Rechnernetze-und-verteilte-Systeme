@@ -33,4 +33,9 @@ typedef struct {
     int count;
 } WordCount;
 
+typedef struct {
+    char word[MAX_CHUNK_SIZE];
+    int frequency;
+} WordFreq;
+
 #endif //RN_PRAXIS_ZMQ_GENERICS_H
