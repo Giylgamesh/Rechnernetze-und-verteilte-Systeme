@@ -15,6 +15,9 @@
  */
 #include "zmq_generics.h"
 
+char *combined_list = NULL;
+size_t combined_list_size = 0;
+pthread_mutex_t thread_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * Öffnet die Datei und liest ihn.
@@ -96,9 +99,9 @@ int compare(const void *a, const void *b) {
     WordFreq *w2 = (WordFreq *)b;
 
     if (w2->frequency != w1->frequency) {
-        return w2->frequency - w1->frequency; // Nach Anzahl
+        return w2->frequency - w1->frequency;
     }
-    return strcmp(w1->word, w2->word); // Alphabetisch
+    return strcmp(w1->word, w2->word);
 }
 
 void print_output(const char *input) {
@@ -107,27 +110,23 @@ void print_output(const char *input) {
 
     int i = 0, len = strlen(input);
 
-    // Parse input string
     while (i < len) {
-        char word[MAX_CHUNK_SIZE] = {0}; // Wort speichern
-        char number[10] = {0};         // Zahl speichern
+        char word[MAX_CHUNK_SIZE] = {0};
+        char number[10] = {0};
         int word_index = 0, num_index = 0;
 
-        // Extract word
         while (i < len && isalpha(input[i])) {
             word[word_index++] = input[i];
             i++;
         }
-        word[word_index] = '\0'; // Null
+        word[word_index] = '\0';
 
-        // Anzahl rausziehen
         while (i < len && isdigit(input[i])) {
             number[num_index++] = input[i];
             i++;
         }
-        number[num_index] = '\0'; // Null
+        number[num_index] = '\0';
 
-        // Ins array schreiben
         if (word_index > 0 && num_index > 0) {
             words[word_count].frequency = atoi(number);
             strcpy(words[word_count].word, word);
@@ -138,7 +137,6 @@ void print_output(const char *input) {
     // sortieren
     qsort(words, word_count, sizeof(WordFreq), compare);
 
-    // Schreiben
     printf("word,frequency\n"); // Uebersxhrift
     for (int j = 0; j < word_count; j++) {
         printf("%s,%d\n", words[j].word, words[j].frequency);
@@ -185,74 +183,96 @@ void *request_worker(void *argWorker) {
      *
      */
     char request[MAX_MSG_LENGTH] = {0};
-
-    memset(request, 0, MAX_MSG_LENGTH);
-    memcpy(request, "map", 3);
-    size_t chunk_size = strnlen(worker->chunk, MAX_MSG_LENGTH - 4);
-    size_t send_size = 3 + chunk_size + 1;
-    memcpy(request + 3, worker->chunk, chunk_size);
-    request[send_size - 1] = '\0';
-
-    if (zmq_send(socket, request, send_size, 0) == -1) {
-        perror("[Thread] Senden des Request an Worker fehlgeschlagen");
-        zmq_close(socket);
-        zmq_ctx_destroy(context);
-        return NULL;
-    }
-    //printf("\n[Thread] Anfrage an Worker: %s.......\n", request);
-
-    /**
-     *
-     * Antwort auf die erste Map-Anfrage des Workers
-     *
-     */
     char response[MAX_MSG_LENGTH] = {0};
-    int recv_length = zmq_recv(socket, response, MAX_MSG_LENGTH - 1, 0);
-    if (recv_length == -1) {
-        perror("[Thread] Erhalten der Response vom Worker fehlgeschlagen");
-        zmq_close(socket);
-        zmq_ctx_destroy(context);
-        return NULL;
+    size_t chunk_position = 0;
+
+    while (chunk_position < strlen(worker->chunk)) {
+        memset(request, 0, MAX_MSG_LENGTH);
+        memcpy(request, "map", 3);
+        size_t chunk_size = strnlen(worker->chunk + chunk_position, MAX_MSG_LENGTH - 4);
+        size_t send_size = 3 + chunk_size + 1;
+        memcpy(request + 3, worker->chunk + chunk_position, chunk_size);
+        request[send_size - 1] = '\0';
+
+        if (zmq_send(socket, request, send_size, 0) == -1) {
+            perror("[Thread] Senden des Request an Worker fehlgeschlagen");
+            zmq_close(socket);
+            zmq_ctx_destroy(context);
+            return NULL;
+        }
+        //printf("\n[Thread] Anfrage an Worker: %s.......\n", request);
+
+        /**
+         *
+         * Antwort auf die erste Map-Anfrage des Workers
+         *
+         */
+
+        int recv_length = zmq_recv(socket, response, MAX_MSG_LENGTH - 1, 0);
+        if (recv_length == -1) {
+            perror("[Thread] Erhalten der Response vom Worker fehlgeschlagen");
+            zmq_close(socket);
+            zmq_ctx_destroy(context);
+            return NULL;
+        }
+        response[recv_length] = '\0';
+
+        //printf("[Thread] Antwort vom Worker: %s\n", response);
+
+        /**
+         *
+         * Zweite Reduce-Anfrage an den Worker
+         *
+         */
+        memset(request, 0, MAX_MSG_LENGTH);
+        memcpy(request, "red", 3);
+        size_t mapped_payload_size = strnlen(response, MAX_MSG_LENGTH - 4);
+        size_t mapped_payload_send_size = 3 + mapped_payload_size + 1;
+        memcpy(request + 3, response, mapped_payload_size);
+        request[mapped_payload_send_size - 1] = '\0';
+
+        if (zmq_send(socket, request, mapped_payload_send_size, 0) == -1) {
+            perror("[Thread] Senden des Request an Worker fehlgeschlagen");
+            zmq_close(socket);
+            zmq_ctx_destroy(context);
+            return NULL;
+        }
+        //printf("\n[Thread] Anfrage an Worker: %s.......\n", request);
+
+        /**
+         *
+         * Antwort der zweiten Reduce-Anfrage des Worker
+         *
+         */
+        memset(response, 0, MAX_MSG_LENGTH);
+        recv_length = zmq_recv(socket, response, MAX_MSG_LENGTH - 1, 0);
+        if (recv_length == -1) {
+            perror("[Thread] Erhalten der Response vom Worker fehlgeschlagen");
+            zmq_close(socket);
+            zmq_ctx_destroy(context);
+            return NULL;
+        }
+        response[recv_length] = '\0';
+
+        pthread_mutex_lock(&thread_mutex);
+        size_t new_size = combined_list_size + recv_length + 1;
+        combined_list = realloc(combined_list, new_size);
+        if (combined_list == NULL) {
+            perror("Realloc für combined_list fehlgeschlagen");
+            pthread_mutex_unlock(&thread_mutex);
+            return NULL;
+        }
+
+        if (combined_list_size == 0) {
+            combined_list[0] = '\0';
+        }
+
+        combined_list_size = new_size - 1;
+        pthread_mutex_unlock(&thread_mutex);
+        strcat(combined_list, response);
+
+        chunk_position += chunk_size;
     }
-    response[recv_length] = '\0';
-
-    //printf("[Thread] Antwort vom Worker: %s\n", response);
-
-    /**
-     *
-     * Zweite Reduce-Anfrage an den Worker
-     *
-     */
-    memset(request, 0, MAX_MSG_LENGTH);
-    memcpy(request, "red", 3);
-    size_t mapped_payload_size = strnlen(response, MAX_MSG_LENGTH - 4);
-    size_t mapped_payload_send_size = 3 + mapped_payload_size + 1;
-    memcpy(request + 3, response, mapped_payload_size);
-    request[mapped_payload_send_size - 1] = '\0';
-
-    if (zmq_send(socket, request, mapped_payload_send_size, 0) == -1) {
-        perror("[Thread] Senden des Request an Worker fehlgeschlagen");
-        zmq_close(socket);
-        zmq_ctx_destroy(context);
-        return NULL;
-    }
-    //printf("\n[Thread] Anfrage an Worker: %s.......\n", request);
-
-    /**
-     *
-     * Antwort der zweiten Reduce-Anfrage des Worker
-     *
-     */
-    memset(response, 0, MAX_MSG_LENGTH);
-    recv_length = zmq_recv(socket, response, MAX_MSG_LENGTH - 1, 0);
-    if (recv_length == -1) {
-        perror("[Thread] Erhalten der Response vom Worker fehlgeschlagen");
-        zmq_close(socket);
-        zmq_ctx_destroy(context);
-        return NULL;
-    }
-    response[recv_length] = '\0';
-    print_output(response);
 
     /**
      *
@@ -398,6 +418,11 @@ int main(int argc, char *argv[]) {
                 pthread_join(threads[i], NULL);
             }
 
+            if (combined_list) {
+                print_output(combined_list);
+                free(combined_list);
+            }
+
         } else {
             //printf("Keine Chunks bzw. Woerter gefunden!");
             free(file_content);
@@ -405,24 +430,6 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
     }
-
-    // Bufferinhalt aufteilen
-    // TODO
-
-    // Chunks an Worker senden
-    // TODO
-
-
-    // Chunk Ergebnisse sammeln
-    // TODO
-
-
-    // Gesammelte Ergebnisse an Worker senden
-    // TODO
-
-
-    // Rückgabe sortieren
-    // TODO
 
     // Speicher freigeben
     free(file_content);
