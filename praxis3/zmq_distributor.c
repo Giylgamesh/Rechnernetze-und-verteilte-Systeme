@@ -255,7 +255,8 @@ void *request_worker(void *argWorker) {
         response[recv_length] = '\0';
 
         pthread_mutex_lock(&thread_mutex);
-        size_t new_size = combined_list_size + recv_length + 1;
+        //
+        size_t new_size = combined_list_size + recv_length + 2; // FIXME vllt. hier nochmal nachschauen bei Speicherproblemen oder falscher Ausgabe
         combined_list = realloc(combined_list, new_size);
         if (combined_list == NULL) {
             perror("Realloc für combined_list fehlgeschlagen");
@@ -268,9 +269,10 @@ void *request_worker(void *argWorker) {
         }
 
         combined_list_size = new_size - 1;
-        pthread_mutex_unlock(&thread_mutex);
-        strcat(combined_list, response);
 
+        strcat(combined_list, response);
+        //
+        pthread_mutex_unlock(&thread_mutex);
         chunk_position += chunk_size;
     }
 
