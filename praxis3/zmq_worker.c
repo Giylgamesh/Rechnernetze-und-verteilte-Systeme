@@ -56,7 +56,7 @@ void count_words(const char *input, char *output) {
     char temp[MAX_CHUNK_SIZE];
     int temp_index = 0;
 
-    printf("\n\nCOUNTING INPUT: %s\n\n", input);
+    //printf("\n\nCOUNTING INPUT: %s\n\n", input);
 
     for (int i = 0; input[i] != '\0'; i++) {
         if (isalpha(input[i])) {
@@ -117,7 +117,7 @@ void count_words(const char *input, char *output) {
             strcat(output, "1");
         }
     }
-    printf("OUT: %s", output);
+    //printf("OUT: %s", output);
 }
 
 void convert_digit(const char *input, char *output) {
@@ -154,17 +154,17 @@ void *create_worker_thread(void *worker_adress) {
     void *socket = zmq_socket(context, ZMQ_REP);
     zmq_bind(socket, worker_adress);
 
-    printf("Worker gestartet und horcht auf: %s\n", worker_adress);
+    printf("[Worker] Gestartet und horcht auf: %s\n", worker_adress);
 
     while(1) {
         char buffer[MAX_MSG_LENGTH];
         memset(buffer, 0, MAX_MSG_LENGTH);
-
-        if (zmq_recv(socket, buffer, MAX_MSG_LENGTH, 0) == -1) {
-            perror("[Thread] Erhalten der Response vom Worker fehlgeschlagen");
+        int recv_bytes = zmq_recv(socket, buffer, MAX_MSG_LENGTH, 0);
+        if (recv_bytes == -1) {
+            perror("[Worker] Erhalten der Response vom Worker fehlgeschlagen");
             return NULL;
         }
-        printf("\nErhaltene Nachricht: %s\n", buffer);
+        printf("\n[Worker] Erhaltene Nachricht: %s\n", buffer);
 
         char type[4] = {0};
         strncpy(type, buffer, 3); // Die ersten 3 Bytes sind type
@@ -174,26 +174,26 @@ void *create_worker_thread(void *worker_adress) {
         char response[MAX_MSG_LENGTH] = {0};
 
         if (strcmp(type, "map") == 0) {
-            printf("MAP wird ausgeführt...\n");
+            printf("[Worker] MAP wird ausgeführt...\n");
 
             /**
              *
              */
             char *word_list = chunk_to_list(payload, payload_length);
-            printf("Wortliste nach Chunking: %s\n", word_list);
+            printf("[Worker] Wortliste nach Chunking: %lu\n", strlen(word_list));
 
             /**
              *
              */
 
             count_words(word_list, response);
-            printf("Wortliste nach Counting: %s\n", response);
+            printf("[Worker] Wortliste nach Counting: %lu\n", strlen(response));
 
             /**
              *
              */
             zmq_send(socket, response, strlen(response) + 1, 0);
-            printf("Antwort an Distributor gesendet: %s\n", response);
+            printf("[Worker] Antwort Bytes an Distributor gesendet: %lu\n", strlen(response));
             free(word_list);
         } else if (strcmp(type, "red") == 0) {
             printf("REDUCE wird ausgeführt...\n");
@@ -202,17 +202,17 @@ void *create_worker_thread(void *worker_adress) {
             convert_digit(payload, response);
 
             zmq_send(socket, response, strlen(response) + 1, 0);
-            printf("Antwort an Distributor gesendet: %s\n", response);
+            printf("[Worker] Antwort an Distributor gesendet: %lu\n", strlen(response));
 
         } else if (strcmp(type, "rip") == 0) {
-            printf("Worker wird heruntergefahren...\n");
+            printf("[Worker] wird heruntergefahren...\n");
             memset(response, 0, MAX_MSG_LENGTH);
             memcpy(response, "rip", 3);
             zmq_send(socket, response, strlen(response) + 1, 0);
             break;
 
         } else {
-            printf("Unbekannter Befehl: %s\n", type);
+            printf("[Worker] Unbekannter Befehl: %s\n", type);
             strcpy(response, "Fehler: Unbekannter Befehl");
             zmq_send(socket, response, strlen(response) + 1, 0);
         }

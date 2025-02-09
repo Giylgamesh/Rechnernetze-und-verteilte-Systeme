@@ -82,7 +82,7 @@ int split_words(char *fileContent, long size) {
                 inside_word = false;
 
                 // Falls Chunk-Grenze erreicht oder überschritten wird: trennen
-                if (chunk_size >= MAX_CHUNK_SIZE) {
+                if (i < size && chunk_size >= MAX_CHUNK_SIZE) {
                     fileContent[i] = '\0';
                     chunk_size = 0;
                 }
@@ -105,13 +105,13 @@ int compare(const void *a, const void *b) {
 }
 
 void print_output(const char *input) {
-    WordFreq words[MAX_CHUNK_SIZE];
-    int word_count = 0;
+    WordFreq words[MAX_MSG_LENGTH];  // Array zur Speicherung von Wörtern und ihrer Häufigkeit
+    int word_count = 0;         // Anzahl der gefundenen Wörter
 
     int i = 0, len = strlen(input);
 
     while (i < len) {
-        char word[MAX_CHUNK_SIZE] = {0};
+        char word[MAX_MSG_LENGTH] = {0};
         char number[10] = {0};
         int word_index = 0, num_index = 0;
 
@@ -128,16 +128,29 @@ void print_output(const char *input) {
         number[num_index] = '\0';
 
         if (word_index > 0 && num_index > 0) {
-            words[word_count].frequency = atoi(number);
-            strcpy(words[word_count].word, word);
-            word_count++;
+            int freq = atoi(number);
+            int found = 0;
+
+            for (int j = 0; j < word_count; j++) {
+                if (strcmp(words[j].word, word) == 0) {
+                    words[j].frequency += freq;
+                    found = 1;
+                    break;
+                }
+            }
+
+            if (!found) {
+                strcpy(words[word_count].word, word);
+                words[word_count].frequency = freq;
+                word_count++;
+            }
         }
     }
 
-    // sortieren
+    //
     qsort(words, word_count, sizeof(WordFreq), compare);
 
-    printf("word,frequency\n"); // Uebersxhrift
+    printf("word,frequency\n");
     for (int j = 0; j < word_count; j++) {
         printf("%s,%d\n", words[j].word, words[j].frequency);
     }
@@ -194,6 +207,7 @@ void *request_worker(void *argWorker) {
         memcpy(request + 3, worker->chunk + chunk_position, chunk_size);
         request[send_size - 1] = '\0';
 
+        //printf("\n\nChunk Text: %s\n\n", worker->chunk + chunk_position);
         if (zmq_send(socket, request, send_size, 0) == -1) {
             perror("[Thread] Senden des Request an Worker fehlgeschlagen");
             zmq_close(socket);
@@ -253,6 +267,8 @@ void *request_worker(void *argWorker) {
             return NULL;
         }
         response[recv_length] = '\0';
+
+        // printf("REDUCED: %s", response);
 
         pthread_mutex_lock(&thread_mutex);
         //
@@ -381,29 +397,34 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < num_workers; j++) {
                 worker[j].chunk = ptr; // Den Chunk in für jeden Worker speichern
                 int current_word = 0;
-
+                // printf("\nWorker[i]: %d\n\n", j);
                 if (j == num_workers - 1) {
                     // Falls es der letzte Worker ist, soll er die restlichen Wörte bekommen.
-                    if (ptr < file_content + file_size) {
-                        while (*ptr != '\0') {
-                            ptr += strlen(ptr) + 1;
-                            current_word++;
-                        }
+                    while (ptr < file_content + file_size && *ptr != '\0') {
+                        size_t len = strlen(ptr);
+                        if (ptr + len + 1 >= file_content + file_size) break;
+                        ptr += len + 1;
+                        current_word++;
                     }
                 } else {
                     // Jeder andere Worker kriegt anteilig eine Anzahl an Wörter
-                    while (*ptr != '\0' && current_word <= words_per_worker) {
-                        ptr += strlen(ptr) + 1; // nächstes Wort
+                    while (ptr < file_content + file_size && *ptr != '\0' && current_word <= words_per_worker) {
+                        size_t len = strlen(ptr);
+                        if (ptr + len + 1 >= file_content + file_size) break;
+                        ptr += len + 1;
                         current_word++;
                     }
                 }
 
                 //printf("Anzahl Woerter fuer Worker[%d]: %d\n\n", j, current_word);
+                // printf("\n\nWorker is given Text: \n\n%s\n\n", worker[j].chunk);
 
                 if (ptr >= file_content + file_size) {
                     //printf("\nAufteilung der Woerter beendet...\n\n");
                     break;
                 }
+
+
             }
 
             // Für jeden Worker mit dem man kommuniziert einen Thread
@@ -419,6 +440,8 @@ int main(int argc, char *argv[]) {
             for (int i = 0; i < num_workers; i++) {
                 pthread_join(threads[i], NULL);
             }
+
+            // printf("\n\nCOMBINED LIST: %s\n\n", combined_list);
 
             if (combined_list) {
                 print_output(combined_list);
